@@ -2,20 +2,37 @@
 
 *Not just an agent. An agent with a past.*
 
-Whaat gives a coding agent a past that lasts beyond one session: a memory it recalls by itself, a journal of each session, and the reports it writes. It is for people who work with Claude Code day after day and want it to remember what it learned, the way a colleague does.
+Whaat is an **AI Identity Runtime**: a local-first system that gives an AI identity continuity across sessions. It provides the memory, journal, history and lifecycle around an agent, so the identity does not have to start from zero every time a new session begins.
 
-The agent decides what to remember and writes it; whaat saves it, puts the right memory in front of the agent at the right moment, and keeps it tidy. Everything stays on your machine, in plain files under git.
+The model is the reasoning engine. Whaat provides the continuity around it: what the identity remembers, what it has experienced, what it has learned, and the context it carries into its next session. The model can change; the identity's stored history and memory can remain.
+
+Whaat is for people who work with AI agents over time and want more than a transcript or a pile of notes. It is for an agent whose past can inform its present, while its memories remain inspectable, correctable and under the user's control.
+
+The agent decides what to remember and writes it; whaat saves it, puts the right memory in front of the agent at the right moment, and helps keep it tidy. Everything stays on your machine, in plain files under git.
 
 ![The memory drawn as a brain](docs/screenshots/memory-brain.png)
 
-## Status
+## The idea: continuity of identity
 
-Version 0.1.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code only, and the terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
+A conversation is temporary. An identity should not be.
+
+Whaat separates the model that performs the reasoning from the persistent context that gives an agent continuity. An identity has its own memory, journal and reports, and can carry that history across sessions. This does not mean that every past detail is loaded all the time: a small core and the relevant memory indexes are made available at session start, while specific memories are recalled when the task calls for them.
+
+The system is built around five connected concerns:
+
+- **Identity — who is this agent?** Its own core, working context, history and private archive.
+- **Memory — what does it remember?** Layered knowledge that can be recalled, used, evaluated and maintained.
+- **Session lifecycle — what happened?** A repeatable flow from session start through work to session-end reflection and journaling.
+- **Curation — how reliable is its memory?** Review and maintenance that can propose corrections, merges, moves and other changes for approval.
+- **Self Journey — how does the identity change over time?** The longer-term direction for reflecting on decisions, commitments, recurring patterns and changes in self-understanding. This is a conceptual direction, not a claim that the complete Self Journey capability is already implemented.
+
+These concerns are related, but they are not interchangeable. Session End closes and records a working session. Curator maintains memory quality. Self Journey looks across sessions for longer-term development.
 
 ## What it does
 
 - **Memory in layers.** A memory is a short markdown file with a trigger: when to recall it. It lives at the level it is true for: everywhere, a group of repos, one repo, or the personal layer about the user and how you work together, with a small core read at every session start. Each save is a git commit.
 - **Recall at the right moment.** Hooks show the agent the core and the triggers that fit the repo it works in, hand it a memory when it opens one, and point direct reads and writes to whaat. Each memory carries a score that fades with age unless the memory is confirmed or proves right in use.
+- **Session lifecycle.** At session start, whaat provides a compact identity core and memory indexes rather than loading the entire archive. The agent can then recall task-relevant memories. At session end, its skills record what happened and what it learned, evaluate memories used during the session, and write a journal entry and session report.
 - **Curation.** A mechanical check and a report propose merges, moves, trims and fixes; you decide each one on a page, and the agent applies them as commits you can undo.
 - **Migration.** Brings existing memory in: a memory store, a personal folder, Claude Code's own auto-memory and a subagent's notes. Each project's notes go to that project's layer, Claude Code's files are converted to whaat's form on the way, and the sources are only read.
 - **Journal and session reports.** At the end of a session the agent writes what happened and what it learned; whaat keeps it as JSON in the identity's private folder.
@@ -41,6 +58,10 @@ The settings: the identities, each with its own folder and token, and the app's 
 ![The settings page](docs/screenshots/settings.png)
 
 The pictures show generated sample data.
+
+## Status
+
+Version 0.1.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code only, and the terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Requirements
 

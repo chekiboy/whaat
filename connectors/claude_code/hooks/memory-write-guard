@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""PreToolUse (Write, Edit, MultiEdit, NotebookEdit, Bash) hook: a write into the harness's own memory dirs is
+answered, not stopped.
+
+Those dirs are the auto-memory (`<config>/projects/*/memory/`, or settings.json's `autoMemoryDirectory`) and
+the subagents' own memory (`.claude/agent-memory/`, `.claude/agent-memory-local/`, `<config>/agent-memory/`).
+A memory written there has no level, trigger or score and drifts beside whaat's, so the call is declined with
+where it goes instead: the personal dir for what is about the user, about you or about working together, the
+memory root for everything else, both through whaat:memory's Save. Reads, deletes and moves out pass; only a
+write whose destination is inside such a dir is declined. Bash heredoc bodies are text, not writes. The check needs
+no server; only the answer asks whaat for this identity's dirs.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shlex
+import sys
+import importlib.util
+from importlib.machinery import SourceFileLoader
+
+import whaat_hook
+
+CONFIG = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude")
+WRITE_TOOLS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
+RECALL_GUARD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "recall-guard")
+
+
+def auto_memory_dir():
+    try:
+        value = json.load(open(os.path.join(CONFIG, "settings.json"), encoding="utf-8")).get("autoMemoryDirectory")
+    except (OSError, ValueError, AttributeError):
+        value = None
+    return os.path.realpath(os.path.expanduser(value)) if value else None
+
+
+def guarded(path, cwd):
+    """'auto-memory' or 'agent memory' when path lies in one of those dirs, else None."""
+    real = os.path.realpath(os.path.join(cwd, os.path.expanduser(path)))
+    projects = os.path.realpath(os.path.join(CONFIG, "projects"))
+    if re.match(re.escape(projects + os.sep) + r"[^/]+/memory(/|$)", real):
+        return "auto-memory"
+    custom = auto_memory_dir()
+    if custom and (real == custom or real.startswith(custom + os.sep)):
+        return "auto-memory"
+    if re.search(r"/\.claude/agent-memory(-local)?(/|$)", real) or real.startswith(
+            os.path.realpath(os.path.join(CONFIG, "agent-memory")) + os.sep):
+        return "agent memory"
+    return None
+
+
+def write_targets(segment):
+    """The paths a simple shell command writes to: redirections, tee, sed -i, and the destination of cp, mv,
+    install, rsync, ln, touch, mkdir."""
+    try:
+        words = shlex.split(segment, posix=True)
+    except ValueError:
+        words = segment.split()
+    targets = []
+    for i, word in enumerate(words):
+        m = re.fullmatch(r"\d?(>>?|&>)(.*)", word)
+        if m:
+            if m.group(2):
+                targets.append(m.group(2))
+            elif i + 1 < len(words):
+                targets.append(words[i + 1])
+    while words and re.match(r"^\w+=", words[0]):
+        words = words[1:]
+    if not words:
+        return targets
+    cmd, rest = os.path.basename(words[0]), [w for w in words[1:] if not re.fullmatch(r"\d?(>>?|&>).*", w)]
+    plain = [w for w in rest if not w.startswith("-")]
+    if cmd in ("tee", "touch", "mkdir"):
+        targets += plain
+    elif cmd == "sed" and any(w == "-i" or w.startswith("-i") for w in rest):
+        targets += plain[1:]
+    elif cmd in ("cp", "mv", "install", "rsync", "ln") and len(plain) >= 2:
+        targets.append(plain[-1])
+    return targets
+
+
+def answer(path, kind):
+    roots = whaat_hook.call("/api/v1/memory/where") or {}
+    personal, memory = roots.get("personal"), roots.get("memory")
+    mine = (f"    {personal}/<name>.md, plus '- <name>.md — <when to recall it>' in {personal}/MEMORY.md"
+            if personal else "    (whaat did not answer: run `whaat memory where --path personal`)")
+    reason = (
+        f"Not written: {path} is the harness's {kind}. Memories go only into whaat, through the "
+        f"whaat:memory skill's Save (its format, level and index line), so they are recalled, scored and "
+        f"curated instead of drifting beside it. Save it there instead:\n"
+        f"  - about the user, about you, or how the two of you work together → the personal dir:\n{mine}\n"
+        f"  - a fact or practice for every repo, one project or one repo → the memory root"
+        f"{f' {memory}' if memory else ''}: `\"{whaat_hook.CLI}\" memory where <repo path>` names the dir; "
+        f"save it with `whaat memory save`.\n"
+        f"Then continue the task.")
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                             "permissionDecisionReason": reason}}))
+
+
+def main():
+    try:
+        event = json.load(sys.stdin)
+        tool, data = event["tool_name"], event.get("tool_input") or {}
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return
+    cwd = event.get("cwd") or os.getcwd()
+    if tool in WRITE_TOOLS:
+        path = data.get("file_path") or data.get("notebook_path") or ""
+        kind = path and guarded(path, cwd)
+        if kind:
+            answer(path, kind)
+        return
+    if tool != "Bash":
+        return
+    try:
+        spec = importlib.util.spec_from_loader("recall_guard", SourceFileLoader("recall_guard", RECALL_GUARD))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        segments = module.segments
+    except (OSError, ImportError, AttributeError):
+        segments = lambda command: re.split(r"\|\||&&|[;|&\n]", command)  # noqa: E731
+    for segment in segments(data.get("command", "")):
+        for target in write_targets(segment):
+            kind = guarded(target, cwd)
+            if kind:
+                return answer(target, kind)
+
+
+if __name__ == "__main__":
+    main()

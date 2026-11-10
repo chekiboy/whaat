@@ -1,0 +1,8 @@
+{
+  "name": "whaat",
+  "version": "0.1.0",
+  "description": "Whaat?! connector for Claude Code: the agent writes, whaat saves.",
+  "author": {
+    "name": "robert.kovacs"
+  }
+}

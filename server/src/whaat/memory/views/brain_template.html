@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Emlékagy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+:root{--bg:#0e0c0a;--bg2:#1b1814;--edge:#3b362d;--paper:#ebe2cd;--ink:#1d1b17;--cream:#f3ead6;--cream2:#d9cfba;--muted:#9a8f7a;
+--red:#e0442b;--orange:#f08a24;--yellow:#f2c230;--teal:#3aa58c;--blue:#2e78c2;
+--stripes:linear-gradient(90deg,var(--red) 0 20%,var(--orange) 20% 40%,var(--yellow) 40% 60%,var(--teal) 60% 80%,var(--blue) 80%);
+--head:"Barlow Condensed","Arial Narrow",sans-serif;--sans:"Barlow",-apple-system,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#05070f;color:var(--cream2);font:15px/1.5 var(--sans);overflow:hidden}
+body::before{content:"";position:fixed;left:0;right:0;top:0;height:5px;background:var(--stripes);z-index:40}
+#stage{position:fixed;inset:0}
+body.embed header,body.embed #legend,body.embed #card,body.embed #hint{display:none}
+body.embed::before{display:none}
+header{position:fixed;left:28px;top:26px;z-index:10;max-width:520px;pointer-events:none}
+.kicker{font:600 11px var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--orange)}
+h1{margin:4px 0 6px;font:800 54px/0.95 var(--head);text-transform:uppercase;color:var(--cream);text-shadow:3px 3px 0 rgba(224,68,43,.55),0 0 18px rgba(240,138,36,.25)}
+.lede{font-size:13.5px;color:#c9d6ee;opacity:.85}
+.panel{position:fixed;z-index:10;background:rgba(27,24,20,.86);border:1px solid var(--edge);backdrop-filter:blur(6px)}
+#legend{left:28px;bottom:26px;padding:14px 16px;max-width:560px}
+#legend h3,#card h3{margin:0 0 8px;font:700 10.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{display:flex;align-items:center;gap:7px;font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--cream);
+background:var(--bg2);border:1px solid var(--edge);padding:5px 9px;cursor:pointer;user-select:none}
+.chip i{width:9px;height:9px;display:inline-block}.chip b{color:var(--muted);font-weight:600}.chip.off{opacity:.35}
+.row{display:flex;gap:8px;align-items:center}
+input[type=search]{font:500 12px var(--mono);background:var(--bg);color:var(--cream);border:1px solid var(--edge);padding:6px 10px;width:220px}
+button{font:600 11px var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--cream);background:var(--bg2);border:1px solid var(--edge);padding:6px 10px;cursor:pointer}
+button:hover,.chip:hover{border-color:var(--orange)}
+#card{right:28px;top:26px;width:360px;max-height:calc(100% - 52px);overflow:auto;padding:16px 18px;background:var(--paper);color:var(--ink);border:0;
+box-shadow:7px 7px 0 rgba(0,0,0,.5);clip-path:polygon(0 0,calc(100% - 20px) 0,100% 20px,100% 100%,0 100%)}
+#card h3{color:#5b5345}#card .t{font:800 26px/1.05 var(--head);text-transform:uppercase;margin:4px 0 8px}
+#card .badge{display:inline-block;font:700 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;color:#fff8e8}
+#card .meta{font:500 12px var(--mono);color:#3b362e;margin:8px 0}#card p{margin:8px 0}
+#card ul{list-style:none;padding:0;margin:6px 0 0}#card li{padding:5px 0;border-top:1px dashed #c4b697;font-size:13.5px;cursor:pointer}
+#card li em{font:600 10.5px var(--mono);font-style:normal;text-transform:uppercase;margin-right:6px}
+#card.empty .t,#card.empty .rest{display:none}
+#labels{position:fixed;inset:0;pointer-events:none;z-index:5}
+.lbl{position:absolute;transform:translate(-50%,-140%);font:600 11.5px var(--sans);color:var(--cream);white-space:nowrap;
+text-shadow:0 0 6px #000,0 0 2px #000;opacity:.82}
+.lbl.hub{font-size:12.5px}.lbl.focus{font:700 14px var(--sans);opacity:1;color:#fff}
+#hint{position:fixed;right:28px;bottom:26px;z-index:10;font:500 11px var(--mono);color:var(--muted);text-align:right}
+@media (max-width:900px){#card{width:auto;left:16px;right:16px;top:auto;bottom:16px;max-height:40%}#legend{display:none}h1{font-size:38px}}
+</style>
+</head>
+<body>
+<div id="stage"></div><div id="labels"></div>
+<header><div class="kicker" id="kick">Memória</div><h1>Emlékagy</h1>
+<div class="lede">Csendes alapállapot: csak az villan fel, amin épp átfut egy impulzus. A core a középvonalon, ahol az énre vonatkozó emlékezet van (mediális homlok- és cinguláris kéreg). A lebenyt a típus adja, mindkét féltekén: a szabályok elöl, a kódbázisok tényei a halántéklebenyben, a receptek mélyen, a bazális ganglionokban. Az oldalt a tartalom dönti el, ahogy az agy is megosztja a munkát: a nyelvi memóriák inkább balra, a térbeli, arc- és hangnem-memóriák inkább jobbra. A 10-16-i desztillátum (ha az identitás őrzi) halványan látszik: az önkép a mediális falon, a lexikon a bal halántéklebenyben, a szabályok elöl, a buktatók mélyen; az élő memóriához, amit megnevez, él köti. A kisagyban halványan a felülírt memóriák és a szellemek, akikre egy link mutat, de nincsenek. A két féltekét összekötő ívek a középvonalon futnak át; a futó fények a spontán aktivitás: ha egy célba ér, a pont felvillan, és néha továbbadja.</div></header>
+<div class="panel" id="legend"><h3>Csomópontok</h3><div class="chips" id="types"></div><h3>Kapcsolatok</h3><div class="chips" id="kinds"></div>
+<div class="row"><input id="q" type="search" placeholder="keresés…"><button id="spin">Forgás: be</button><button id="reset">Alaphelyzet</button></div></div>
+<div class="panel empty" id="card"><h3>Kiválasztott</h3><div class="hint0">Kattints egy pontra az agyban.</div><div class="t"></div><div class="rest"></div></div>
+<div id="hint">húzd: forgat · görgő: nagyít · jobb gomb: mozgat</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+const D = /*DATA*/null;
+const byId = Object.fromEntries(D.nodes.map(n => [n.id, n]));
+document.getElementById("kick").textContent = D.kicker;
+if (D.embed) document.body.classList.add("embed");
+// the distillate (2026-10-16), drawn faint: its types, kinds and ids start with "d:"
+const isOld = t => t === "old" || t === "d:old";
+const faintLayer = !!D.distilled;
+const faint = n => faintLayer && n.type.startsWith("d:");
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight); renderer.setClearColor(0x05070f);
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05070f);
+scene.fog = new THREE.FogExp2(0x05070f, 0.1);
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.01, 100);
+const HOME = new THREE.Vector3(-1.75, 0.62, 1.62);
+camera.position.copy(HOME);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.85, 0.5, 0.42);
+composer.addPass(bloom); composer.addPass(new OutputPass());
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+controls.minDistance = 0.8; controls.maxDistance = 7;
+
+// cortex: two hemispheres with a flat medial wall and a fissure between them, gyri and sulci, a striped
+// cerebellum and a brainstem; points brighter on the gyri crests
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const S = D.shape, shell = [], shellCol = [];
+const sulcusC = new THREE.Color(0x5a3a2c), gyrusC = new THREE.Color(0xf0c9a8), stemC = new THREE.Color(0x4a3a2e);
+function addPoint(x, y, z, k, base) { shell.push(x, y, z); const c = (base || sulcusC).clone().lerp(gyrusC, k); shellCol.push(c.r, c.g, c.b); }
+function hemiRadius(v) {
+  let r = 1;
+  if (v[1] < 0) r *= 1 - 0.22 * v[1] * v[1];                                   // flatter base
+  r += 0.16 * Math.exp(-((v[0] - 0.7) ** 2 + (v[1] + 0.5) ** 2 + (v[2] - 0.2) ** 2) / 0.08);   // temporal lobe
+  r -= 0.10 * Math.max(0, v[2] - 0.55) * (1 - v[1]);                            // rounder, lower frontal pole
+  r += 0.07 * Math.max(0, v[1]) * Math.max(0, 0.6 - v[2]);                      // high parietal crown
+  r -= 0.06 * Math.max(0, -v[2] - 0.75);                                        // occipital pole
+  return r;
+}
+// the cortex as glowing fibres: short curves that flow over the surface (and a little under it) along a smooth
+// direction field, cyan to violet, fading at their ends; arcs on the cerebellum, converging fibres in the brainstem
+const fib = [], fibCol = [];
+const cA = new THREE.Color(0x2fb7ff), cB = new THREE.Color(0x7d5cff), cC = new THREE.Color(0x3ef0d2);
+function sulcusAt(v) {
+  const lat = Math.asin(Math.max(-1, Math.min(1, v.y))), lon = Math.atan2(v.z, v.x);
+  return Math.sin(14 * lat + 4 * Math.sin(3 * lon)) * Math.sin(12 * lon + 3 * Math.cos(4 * lat)) + 0.5 * Math.sin(23 * lat + 9 * lon + 1.3);
+}
+function surfPoint(side, v, depth) {
+  const r = hemiRadius([v.x, v.y, v.z]) * (1 + 0.035 * sulcusAt(v)) * depth;
+  const x = Math.max(v.x * r, -0.97);
+  return new THREE.Vector3(side * (S.cx + 0.012 + S.a * x), S.b * v.y * r, S.c * v.z * r);
+}
+function flowAt(v, t) {
+  const f = new THREE.Vector3(Math.sin(3.1 * v.y + 1.7 + t) + Math.cos(2.3 * v.z), Math.cos(2.7 * v.x + t) + Math.sin(2.1 * v.z + 0.3),
+                              Math.sin(2.2 * v.x + 1.1) + Math.cos(3.3 * v.y + t));
+  return f.addScaledVector(v, -f.dot(v)).normalize();
+}
+function addSeg(a, b, ca, cb) { fib.push(a.x, a.y, a.z, b.x, b.y, b.z); fibCol.push(ca.r, ca.g, ca.b, cb.r, cb.g, cb.b); }
+function tint(v, k) { const c = cA.clone().lerp(cB, Math.max(0, Math.min(1, 0.5 - 0.6 * v.z))); if (v.y > 0.55) c.lerp(cC, 0.35); return c.multiplyScalar(k); }
+for (const side of [-1, 1]) for (let i = 0; i < 1100; i++) {
+  const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, sq = Math.sqrt(1 - u * u);
+  const v = new THREE.Vector3(sq * Math.cos(th), u, sq * Math.sin(th));
+  if (v.x < -0.3) continue;
+  const depth = 1 - 0.14 * rnd() ** 2, t = rnd() * 6, steps = 14 + Math.floor(rnd() * 26);
+  let prev = surfPoint(side, v, depth), prevK = 0;
+  for (let k = 1; k <= steps; k++) {
+    v.addScaledVector(flowAt(v, t), 0.034).normalize();
+    if (v.x < -0.32) break;
+    const p = surfPoint(side, v, depth), kk = Math.sin(Math.PI * k / steps) * (0.55 + 0.45 * depth);
+    addSeg(prev, p, tint(v, prevK), tint(v, kk)); prev = p; prevK = kk;
+  }
+}
+for (let j = 0; j < 70; j++) {                                                 // cerebellum: folia arcs
+  const u = -0.95 + 1.9 * j / 70, ring = Math.sqrt(1 - u * u), fol = 1 + 0.05 * Math.sin(46 * u);
+  let prev = null;
+  for (let a = 0; a <= 48; a++) {
+    const th = Math.PI * (0.05 + 0.9 * a / 48) + Math.PI;
+    const p = new THREE.Vector3(0.52 * ring * Math.cos(th) * fol, -0.52 + 0.17 * u * fol, -0.70 + 0.24 * ring * Math.sin(th) * fol);
+    const c = cB.clone().lerp(cA, 0.3).multiplyScalar(0.35 * Math.sin(Math.PI * a / 48));
+    if (prev) addSeg(prev, p, c, c); prev = p;
+  }
+}
+for (let j = 0; j < 46; j++) {                                                 // brainstem: fibres converging down
+  const th = rnd() * Math.PI * 2, rr = 0.03 + 0.05 * rnd();
+  let prev = null;
+  for (let a = 0; a <= 24; a++) {
+    const h = a / 24, w = rr * (1 - 0.45 * h) + 0.006 * Math.sin(9 * h + th);
+    const p = new THREE.Vector3(w * Math.cos(th), -0.36 - 0.48 * h, -0.40 - 0.24 * h + w * Math.sin(th));
+    const c = cA.clone().multiplyScalar(0.4 * (1 - 0.6 * h));
+    if (prev) addSeg(prev, p, c, c); prev = p;
+  }
+}
+const fibGeo = new THREE.BufferGeometry();
+fibGeo.setAttribute("position", new THREE.Float32BufferAttribute(fib, 3));
+fibGeo.setAttribute("color", new THREE.Float32BufferAttribute(fibCol, 3));
+const fibMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+scene.add(new THREE.LineSegments(fibGeo, fibMat));
+const dust = [], dustCol = [];                                                  // a little dust on the surface
+for (const side of [-1, 1]) for (let i = 0; i < 1600; i++) {
+  const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, sq = Math.sqrt(1 - u * u), v = new THREE.Vector3(sq * Math.cos(th), u, sq * Math.sin(th));
+  if (v.x < -0.3) continue;
+  const p = surfPoint(side, v, 1 - 0.08 * rnd()); dust.push(p.x, p.y, p.z); const c = tint(v, 0.6 + 0.4 * rnd()); dustCol.push(c.r, c.g, c.b);
+}
+const dustGeo = new THREE.BufferGeometry();
+dustGeo.setAttribute("position", new THREE.Float32BufferAttribute(dust, 3));
+dustGeo.setAttribute("color", new THREE.Float32BufferAttribute(dustCol, 3));
+const dotCv = document.createElement("canvas"); dotCv.width = dotCv.height = 32;
+const dg = dotCv.getContext("2d"), dgr = dg.createRadialGradient(16, 16, 0, 16, 16, 16);
+dgr.addColorStop(0, "rgba(255,255,255,1)"); dgr.addColorStop(0.5, "rgba(255,255,255,.7)"); dgr.addColorStop(1, "rgba(255,255,255,0)");
+dg.fillStyle = dgr; dg.fillRect(0, 0, 32, 32);
+const shellMat = new THREE.PointsMaterial({ size: 0.012, map: new THREE.CanvasTexture(dotCv), vertexColors: true, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending });
+scene.add(new THREE.Points(dustGeo, shellMat));
+
+// glow sprite texture
+const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+const g = cv.getContext("2d"), grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+grad.addColorStop(0, "rgba(255,255,255,1)"); grad.addColorStop(0.25, "rgba(255,255,255,.55)"); grad.addColorStop(1, "rgba(255,255,255,0)");
+g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+const glowTex = new THREE.CanvasTexture(cv);
+
+// nodes
+const nodeObjs = [], meshToNode = new Map();
+for (const n of D.nodes) {
+  const color = new THREE.Color(D.types[n.type].color);
+  const r = 0.0075 + 0.0026 * Math.sqrt(n.deg);
+  // a neuron: a small, angular, elongated soma and branching dendrites that run along the cortex, never out of it
+  let h = 0; for (const ch of n.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const nr = () => (h = (h * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const P = new THREE.Vector3(...n.p), old = isOld(n.type);
+  const centre = old ? new THREE.Vector3(0, -0.52, -0.70) : new THREE.Vector3(Math.sign(P.x) * (S.cx + 0.012), 0, 0);
+  const radii = old ? new THREE.Vector3(0.52, 0.17, 0.24) : new THREE.Vector3(S.a, S.b, S.c);
+  const surface = d => {                                          // the cortex radius in this direction (unit = ellipsoid)
+    if (old) return 1;
+    const v = new THREE.Vector3(Math.sign(P.x) * d.x / radii.x, d.y / radii.y, d.z / radii.z).normalize();
+    return hemiRadius([v.x, v.y, v.z]) * 0.96;
+  };
+  const inside = (q, limit) => {                                  // pull a world point back under the surface
+    const d = q.clone().sub(centre), k = Math.hypot(d.x / radii.x, d.y / radii.y, d.z / radii.z), lim = limit * surface(d);
+    return k > lim ? centre.clone().add(d.multiplyScalar(lim / k)) : q;
+  };
+  P.copy(inside(P, 0.93)); n.p = [P.x, P.y, P.z];                // the soma sits under the cortex too; edges follow it
+  const outward = P.clone().sub(centre).divide(radii).normalize();
+  const tangent = v => v.clone().addScaledVector(outward, -v.dot(outward)).addScaledVector(outward, -0.25).normalize();
+  const apical = tangent(new THREE.Vector3(nr() - 0.5, nr() - 0.5, nr() - 0.5));
+  const somaGeo = new THREE.IcosahedronGeometry(r, 0), sp = somaGeo.attributes.position;
+  const ph = nr() * 6.283, along = new THREE.Vector3();
+  for (let i = 0; i < sp.count; i++) {                            // same position, same shape: no gaps between faces
+    along.set(sp.getX(i), sp.getY(i), sp.getZ(i));
+    const t = along.dot(apical) / r, bump = 0.8 + 0.25 * Math.sin(5 * along.x / r + ph) * Math.cos(4 * along.y / r + ph);
+    along.addScaledVector(apical, t * r * (t > 0 ? 0.9 : 0.2)).multiplyScalar(bump * 0.85);
+    sp.setXYZ(i, along.x, along.y, along.z);
+  }
+  somaGeo.computeVertexNormals();
+  const mesh = new THREE.Mesh(somaGeo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: old ? 0.4 : 1 }));
+  mesh.position.copy(P);
+  const seg = [];
+  const branch = (from, dir, len, depth) => {                    // from and the ends are world points
+    from = inside(from, 0.985);
+    const bend = new THREE.Vector3(nr() - 0.5, nr() - 0.5, nr() - 0.5).multiplyScalar(0.6);
+    const mid = inside(from.clone().add(tangent(dir.clone().add(bend)).multiplyScalar(len * 0.55)), 0.985);
+    const end = inside(mid.clone().add(tangent(dir.clone().add(bend.multiplyScalar(1.5))).multiplyScalar(len * 0.45)), 0.985);
+    for (const q of [from, mid, mid, end]) seg.push(q.x - P.x, q.y - P.y, q.z - P.z);
+    if (depth < 2) for (let f = 0; f < 2; f++) {
+      const d2 = dir.clone().add(new THREE.Vector3(nr() - 0.5, nr() - 0.5, nr() - 0.5).multiplyScalar(1.3)).normalize();
+      branch(mid, d2, len * 0.55, depth + 1);
+    }
+  };
+  branch(P.clone().addScaledVector(apical, r * 1.4), apical, r * (5 + 2 * nr()), 0);   // the apical dendrite
+  const arms = 3 + Math.floor(nr() * 4);
+  for (let a = 0; a < arms; a++) {
+    const d = tangent(new THREE.Vector3(nr() - 0.5, nr() - 0.5, nr() - 0.5).addScaledVector(apical, -0.6));
+    branch(P.clone().addScaledVector(d, r * 0.7), d, r * (2.4 + 2 * nr()), 1);
+  }
+  const dendGeo = new THREE.BufferGeometry(); dendGeo.setAttribute("position", new THREE.Float32BufferAttribute(seg, 3));
+  const dend = new THREE.LineSegments(dendGeo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending }));
+  mesh.add(dend);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: old ? 0.15 : 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.scale.setScalar(r * 7); mesh.add(glow);
+  const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  core.scale.setScalar(r * 4.5); mesh.add(core);
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(Math.max(r * 2.2, 0.05), 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
+  mesh.add(hit);
+  scene.add(mesh); meshToNode.set(hit, n);
+  nodeObjs.push({ n, mesh, glow, hit, r, dend, core, mode: "rest", act: 0 });
+}
+const nodeObj = Object.fromEntries(nodeObjs.map(o => [o.n.id, o]));
+
+// edges: arcs; across the midline they pass the corpus callosum
+const edgeObjs = [];
+for (const e of D.edges) {
+  const a = new THREE.Vector3(...byId[e.source].p), b = new THREE.Vector3(...byId[e.target].p);
+  const mid = a.clone().add(b).multiplyScalar(0.5);
+  const cross = Math.sign(a.x) !== Math.sign(b.x);
+  const ctrl = cross ? new THREE.Vector3(0, 0.12, mid.z * 0.7) : mid.clone().multiplyScalar(0.78);
+  const pts = new THREE.QuadraticBezierCurve3(a, ctrl, b).getPoints(28);
+  const geo = new LineGeometry(); geo.setPositions(pts.flatMap(q => [q.x, q.y, q.z]));
+  const mat = new LineMaterial({ color: new THREE.Color(D.kinds[e.kind].color), linewidth: 1.6, transparent: true, opacity: 0.22,
+    depthWrite: false, blending: THREE.AdditiveBlending });
+  mat.resolution.set(innerWidth, innerHeight);
+  const line = new Line2(geo, mat); line.computeLineDistances(); scene.add(line);
+  const base = faintLayer && e.kind.startsWith("d:") ? 0.08 : 0.22; mat.opacity = base;
+  edgeObjs.push({ e, line, pts, base, heat: 0 });
+}
+
+// pulses along the highlighted edges
+const pulseGeo = new THREE.SphereGeometry(0.008, 8, 6);
+let pulses = [];
+function setPulses(list) {
+  pulses.forEach(p => scene.remove(p.m)); pulses = [];
+  for (const eo of list) for (let k = 0; k < 2; k++) {
+    const m = new THREE.Mesh(pulseGeo, new THREE.MeshBasicMaterial({ color: eo.line.material.color, transparent: true, opacity: 0.95 }));
+    scene.add(m); pulses.push({ m, pts: eo.pts, t: k / 2 });
+  }
+}
+
+// spontaneous activity: a pulse runs along an edge; when it arrives, the node flashes and may fire on
+const sparkMat = new THREE.SpriteMaterial({ map: null, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+let sparks = [], lastSpawn = 0;
+const flashes = new Map();
+const edgesOf = {};
+edgeObjs.forEach(o => { (edgesOf[o.e.source] ||= []).push(o); (edgesOf[o.e.target] ||= []).push(o); });
+function fire(eo, from, depth, into = sparks) {
+  if (sparks.length > 60 || !eo.line.visible) return;
+  const sp = new THREE.Sprite(sparkMat.clone());
+  sp.material.map = glowTex; sp.material.color = eo.line.material.color.clone().lerp(new THREE.Color(0xffffff), 0.45);
+  sp.scale.setScalar(0.035); scene.add(sp);
+  const forward = eo.e.source === from;
+  into.push({ sp, eo, t: 0, speed: 0.45 + Math.random() * 0.5, forward, depth });
+}
+function pool() {
+  const active = hover || focus;
+  return active ? neighbours(active.id).filter(visibleEdge) : edgeObjs.filter(o => o.line.visible);
+}
+function spawnRandom() {
+  const vis = pool();
+  if (!vis.length) return;
+  const eo = vis[Math.floor(Math.random() * vis.length)];
+  fire(eo, Math.random() < 0.5 ? eo.e.source : eo.e.target, 0);
+}
+function stepSparks(dt, now) {
+  const allowed = new Set(pool()), focused = !!(hover || focus);
+  if (now - lastSpawn > (focused ? 0.05 : 0.09) + Math.random() * 0.12) { spawnRandom(); lastSpawn = now; }
+  if (focused) sparks = sparks.filter(k => allowed.has(k.eo) || (scene.remove(k.sp), false));
+  const chained = [];
+  sparks = sparks.filter(k => {
+    k.t += dt * k.speed;
+    if (k.t >= 1) {
+      scene.remove(k.sp);
+      const to = k.forward ? k.eo.e.target : k.eo.e.source;
+      flashes.set(to, 1); nodeObj[to].act = 1;
+      if (k.depth < 4 && Math.random() < 0.38) {
+        const next = (edgesOf[to] || []).filter(o => o !== k.eo && o.line.visible && allowed.has(o));
+        if (next.length) fire(next[Math.floor(Math.random() * next.length)], to, k.depth + 1, chained);
+      }
+      return false;
+    }
+    k.eo.heat = 1;
+    nodeObj[k.eo.e.source].act = Math.max(nodeObj[k.eo.e.source].act, 0.85);
+    nodeObj[k.eo.e.target].act = Math.max(nodeObj[k.eo.e.target].act, 0.85);
+    const pts = k.eo.pts, u = k.forward ? k.t : 1 - k.t, i = u * (pts.length - 1), a = Math.floor(i);
+    k.sp.position.lerpVectors(pts[a], pts[Math.min(a + 1, pts.length - 1)], i - a);
+    k.sp.material.opacity = Math.sin(Math.PI * k.t) * 0.95;
+    return true;
+  });
+  sparks.push(...chained);
+  for (const o of edgeObjs) {
+    o.heat = Math.max(0, o.heat - dt * 1.6);
+    o.line.material.opacity = Math.max(o.base, 0.55 * o.heat);
+    o.line.material.linewidth = 1.6 + 0.6 * o.heat;
+  }
+  for (const o of nodeObjs) {
+    o.act = Math.max(0, o.act - dt * 0.9);
+    const old = isOld(o.n.type), dim = faint(o.n) ? 0.4 : 1, full = (old ? 0.4 : 1) * dim, glowFull = (old ? 0.15 : 0.6) * dim;
+    if (o.mode === "dim") { o.mesh.material.opacity = 0.1; o.glow.material.opacity = 0.02; }
+    else if (o.mode === "lit") { o.mesh.material.opacity = full; o.glow.material.opacity = glowFull; }
+    else { const rest = (old ? 0.12 : 0.22) * dim; o.mesh.material.opacity = rest + (full - rest) * o.act; o.glow.material.opacity = 0.03 * dim + glowFull * o.act; }
+    o.dend.material.opacity = o.mesh.material.opacity * 0.65;
+    o.core.material.opacity = o.mode === "dim" ? 0 : o.mode === "lit" ? 0.55 : 0.95 * o.act;
+  }
+  for (const [id, f] of flashes) {
+    const o = nodeObj[id], left = f - dt * 2.2;
+    if (left <= 0) { flashes.delete(id); o.glow.scale.setScalar(o.r * 7); continue; }
+    flashes.set(id, left); o.glow.scale.setScalar(o.r * (7 + 8 * left));
+  }
+}
+
+// filters, search, focus
+const hiddenTypes = new Set(), hiddenKinds = new Set();
+let focus = null, hover = null, query = "";
+const neighbours = id => edgeObjs.filter(o => o.e.source === id || o.e.target === id);
+function visibleNode(n) { return !hiddenTypes.has(n.type); }
+function visibleEdge(o) { return !hiddenKinds.has(o.e.kind) && visibleNode(byId[o.e.source]) && visibleNode(byId[o.e.target]); }
+function matches(n) { return !query || (n.label + " " + n.detail).toLowerCase().includes(query); }
+function refresh() {
+  const active = hover || focus, near = active ? new Set([active.id]) : null;
+  const hot = active ? neighbours(active.id).filter(visibleEdge) : [];
+  hot.forEach(o => { near.add(o.e.source); near.add(o.e.target); });
+  for (const o of nodeObjs) {
+    const vis = visibleNode(o.n); o.mesh.visible = vis; o.hit.visible = false;
+    const dim = (near && !near.has(o.n.id)) || !matches(o.n);
+    o.mode = dim ? "dim" : (near || query) ? "lit" : "rest";
+    o.mesh.scale.setScalar(active && o.n.id === active.id ? 1.8 : 1);
+  }
+  for (const o of edgeObjs) {
+    o.line.visible = visibleEdge(o);
+    o.base = active ? (hot.includes(o) ? 0.95 : 0.04) : (query ? 0.06 : 0.14);
+  }
+  setPulses([]);
+  drawLabels(true);
+}
+function chip(host, key, label, color, count, set) {
+  const el = document.createElement("span"); el.className = "chip";
+  el.innerHTML = `<i style="background:${color}"></i>${label} <b>${count}</b>`;
+  el.classList.toggle("off", set.has(key));
+  el.onclick = () => { set.has(key) ? set.delete(key) : set.add(key); el.classList.toggle("off", set.has(key)); refresh(); };
+  host.appendChild(el);
+}
+const tc = {}, kc = {};
+D.nodes.forEach(n => tc[n.type] = (tc[n.type] || 0) + 1); D.edges.forEach(e => kc[e.kind] = (kc[e.kind] || 0) + 1);
+for (const [k, t] of Object.entries(D.types)) if (tc[k]) chip(document.getElementById("types"), k, t.label, t.color, tc[k], hiddenTypes);
+for (const [k, t] of Object.entries(D.kinds)) if (kc[k]) chip(document.getElementById("kinds"), k, t.label, t.color, kc[k], hiddenKinds);
+document.getElementById("q").oninput = ev => { query = ev.target.value.trim().toLowerCase(); refresh(); };
+const spin = document.getElementById("spin");
+spin.onclick = () => { controls.autoRotate = !controls.autoRotate; spin.textContent = "Forgás: " + (controls.autoRotate ? "be" : "ki"); };
+document.getElementById("reset").onclick = () => { focus = null; showCard(null); flyTo(new THREE.Vector3(0, 0, 0), HOME); refresh(); };
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const card = document.getElementById("card");
+function showCard(n) {
+  if (D.embed) parent.postMessage({ whaat: "select", id: n ? n.id : null }, "*");
+  card.classList.toggle("empty", !n);
+  if (!n) return;
+  const t = D.types[n.type];
+  card.querySelector(".t").textContent = n.label;
+  const links = neighbours(n.id).map(o => {
+    const other = o.e.source === n.id ? o.e.target : o.e.source, out = o.e.source === n.id, k = D.kinds[o.e.kind];
+    return `<li data-id="${esc(other)}"><em style="color:${k.color}">${out ? "" : "← "}${esc(k.label)}${out ? " →" : ""}</em>${esc(byId[other].label)}</li>`;
+  }).join("");
+  card.querySelector(".rest").innerHTML = `<span class="badge" style="background:${t.color};${n.type === "identity" || n.type === "value" ? "color:#1d1b17" : ""}">${esc(t.label)}</span>
+    <div class="meta">${esc(n.date)} · ${esc(D.lobes[n.lobe || n.type] || "")}${n.mem ? " · " + esc(n.mem) : ""}</div><p>${esc(n.detail)}</p>
+    <h3>Kapcsolatok (${neighbours(n.id).length})</h3><ul>${links}</ul>`;
+  card.querySelectorAll("li").forEach(li => li.onclick = () => select(byId[li.dataset.id]));
+}
+let fly = null;
+function flyTo(target, camPos) { fly = { t: 0, fromT: controls.target.clone(), toT: target, fromC: camera.position.clone(), toC: camPos }; }
+function select(n) {
+  focus = n; showCard(n); controls.autoRotate = false; spin.textContent = "Forgás: ki";
+  const p = new THREE.Vector3(...n.p), dir = p.clone().normalize().multiplyScalar(2.2).add(new THREE.Vector3(0, 0.25, 0));
+  flyTo(p.clone().multiplyScalar(0.6), p.clone().add(dir)); refresh();
+}
+
+// picking
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let downAt = null;
+function pick(ev) {
+  mouse.set(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1); ray.setFromCamera(mouse, camera);
+  nodeObjs.forEach(o => o.hit.visible = o.mesh.visible);
+  const hit = ray.intersectObjects(nodeObjs.filter(o => o.mesh.visible).map(o => o.hit), false)[0];
+  nodeObjs.forEach(o => o.hit.visible = false);
+  return hit ? meshToNode.get(hit.object) : null;
+}
+renderer.domElement.addEventListener("pointermove", ev => {
+  const n = pick(ev); if (n !== hover) { hover = n; renderer.domElement.style.cursor = n ? "pointer" : "grab"; refresh(); }
+});
+renderer.domElement.addEventListener("pointerdown", ev => downAt = [ev.clientX, ev.clientY]);
+renderer.domElement.addEventListener("pointerup", ev => {
+  if (!downAt || Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 5) return;
+  const n = pick(ev); n ? select(n) : (focus = null, showCard(null), refresh());
+});
+
+// labels: hubs always, the active node and its neighbours on focus
+const labelHost = document.getElementById("labels"), labelEls = new Map();
+const hubs = new Set([...D.nodes].sort((a, b) => b.deg - a.deg).slice(0, 14).map(n => n.id));
+function drawLabels() {
+  const active = hover || focus, near = new Set();
+  if (active) { near.add(active.id); neighbours(active.id).forEach(o => { near.add(o.e.source); near.add(o.e.target); }); }
+  const want = new Set([...(active ? near : hubs)].filter(id => visibleNode(byId[id]) && (!query || matches(byId[id]))));
+  if (query) D.nodes.filter(n => matches(n) && visibleNode(n)).slice(0, 25).forEach(n => want.add(n.id));
+  for (const [id, el] of labelEls) if (!want.has(id)) { el.remove(); labelEls.delete(id); }
+  const v = new THREE.Vector3();
+  for (const id of want) {
+    let el = labelEls.get(id);
+    if (!el) { el = document.createElement("div"); el.textContent = byId[id].label; labelHost.appendChild(el); labelEls.set(id, el); }
+    el.className = "lbl" + (active && id === active.id ? " focus" : hubs.has(id) ? " hub" : "");
+    v.set(...byId[id].p).project(camera);
+    const behind = v.z > 1, x = (v.x + 1) / 2 * innerWidth, y = (1 - v.y) / 2 * innerHeight;
+    el.style.display = behind ? "none" : ""; el.style.left = x + "px"; el.style.top = y + "px";
+    const depth = camera.position.distanceTo(new THREE.Vector3(...byId[id].p));
+    el.style.opacity = active && id === active.id ? 1 : Math.max(0.25, Math.min(0.9, 2.6 / depth));
+  }
+}
+
+addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight); bloom.setSize(innerWidth, innerHeight);
+  edgeObjs.forEach(o => o.line.material.resolution.set(innerWidth, innerHeight)); });
+const clock = new THREE.Clock();
+(function loop() {
+  const dt = clock.getDelta();
+  if (fly) { fly.t = Math.min(1, fly.t + dt * 1.4); const k = 1 - Math.pow(1 - fly.t, 3);
+    controls.target.lerpVectors(fly.fromT, fly.toT, k); camera.position.lerpVectors(fly.fromC, fly.toC, k); if (fly.t >= 1) fly = null; }
+  for (const p of pulses) { p.t = (p.t + dt * 0.45) % 1; const i = p.t * (p.pts.length - 1), a = Math.floor(i);
+    p.m.position.lerpVectors(p.pts[a], p.pts[Math.min(a + 1, p.pts.length - 1)], i - a); }
+  fibMat.opacity = 0.5 + 0.07 * Math.sin(clock.elapsedTime * 0.8); shellMat.opacity = 0.6 + 0.1 * Math.sin(clock.elapsedTime * 1.3);
+  stepSparks(dt, clock.elapsedTime);
+  controls.update(); composer.render(); drawLabels();
+  requestAnimationFrame(loop);
+})();
+refresh();
+
+// embedded in the whaat memory page: the page draws the chips, the search and the card; this frame only draws the brain
+if (D.embed) {
+  const counts = {};
+  D.nodes.forEach(n => counts[n.type] = (counts[n.type] || 0) + 1);
+  addEventListener("message", ev => {
+    const m = ev.data;
+    if (!m || !m.whaat) return;
+    if (m.whaat === "filter") {
+      hiddenTypes.clear(); (m.hiddenTypes || []).forEach(t => hiddenTypes.add(t));
+      hiddenKinds.clear(); (m.hiddenKinds || []).forEach(k => hiddenKinds.add(k));
+      query = (m.query || "").trim().toLowerCase(); refresh();
+    } else if (m.whaat === "select") {
+      if ((focus && focus.id) === m.id) return;
+      const n = m.id && byId[m.id];
+      if (n) select(n); else { focus = null; refresh(); }
+    } else if (m.whaat === "spin") {
+      controls.autoRotate = !!m.on;
+    }
+  });
+  const distilled = D.distilled && { lobes: D.lobes, nodes: Object.fromEntries(D.nodes.filter(n => n.type.startsWith("d:"))
+    .map(n => [n.id, { label: n.label, type: n.type, detail: n.detail, date: n.date, mem: n.mem, linked: n.linked, lobe: n.lobe }])) };
+  parent.postMessage({ whaat: "ready", view: "brain", types: D.types, kinds: D.kinds, counts, distilled }, "*");
+}
+</script>
+</body>
+</html>

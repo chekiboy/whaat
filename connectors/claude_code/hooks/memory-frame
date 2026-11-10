@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Hook companion of whaat:memory-recall: frames what a recall reads, so a memory arrives as the user's rule.
+
+    PostToolUse (Bash)     after a `whaat memory open` for a recall or load (which prints only one line) whaat puts
+                           the memory itself into the context as a `Memory: <file>` note, once per agent: what this
+                           agent's context already holds (an earlier put-in, or the main session's core since the last
+                           compaction) is named, not repeated; force=1 repeats it. Curate, review and save reads stay in
+                           the tool result as data
+    UserPromptSubmit       one line: a message that starts or changes a task gets a memory-recall index first; nothing
+                           in a session with no whaat token, where the plugin is loaded but not connected
+
+A tool result reaches the model as data; hook context arrives as a separate note from the harness. The note only names
+the memory; the rules for using one live in the skill. Only a line of the form `opened: <file> -> <path>` reaches the
+server; any other Bash call costs no request.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+
+import whaat_hook
+
+OPENED = re.compile(r"^opened: (\S+) -> (/.+\.md)$", re.M)
+
+
+def post_tool_use(event):
+    # The acknowledgement lines decide, not the command text: a call through a variable or a loop names no
+    # `whaat memory open` at all.
+    response = event.get("tool_response")
+    stdout = response.get("stdout", "") if isinstance(response, dict) else str(response or "")
+    opened = OPENED.findall(stdout)
+    if not opened:
+        return None
+    command = (event.get("tool_input") or {}).get("command", "")
+    framed = whaat_hook.call(
+        "/api/v1/memory/recall/frame",
+        {
+            "session": event.get("session_id") or "",
+            "agent": event.get("agent_id") or "",
+            "opened": [{"file": rel, "path": path} for rel, path in opened],
+            "force": "force=1" in command,
+        },
+    )
+    context = framed and framed.get("context")
+    if not context:
+        return None
+    return {"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": context}}
+
+
+def user_prompt_submit(event):
+    if not whaat_hook.lookup("WHAAT_TOKEN"):
+        return None
+    return {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": (
+        "Memory: if this message starts a task or changes it, run memory-recall index task=\"<the task>\" "
+        "before working, and open each memory whose trigger matches.")}}
+
+
+def main():
+    try:
+        event = json.load(sys.stdin)
+    except ValueError:
+        return
+    handler = {"PostToolUse": post_tool_use, "UserPromptSubmit": user_prompt_submit}.get(event.get("hook_event_name"))
+    output = handler(event) if handler else None
+    if output:
+        print(json.dumps(output, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()

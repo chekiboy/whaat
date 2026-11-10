@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Builds
+dist/
+
+# Operating system
+.DS_Store
+
+# AI coding agents: local settings, skills, sessions and worktrees
+.claude/
+CLAUDE.local.md
+.gemini/
+.codex/
+
+# JetBrains IDEs (PyCharm and the rest)
+.idea/
+*.iml
+
+# Local architecture notes, not part of the repo
+docs/architecture.md

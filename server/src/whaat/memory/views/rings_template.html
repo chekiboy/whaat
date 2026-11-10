@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memória-pilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#161411;--bg2:#211e19;--edge:#3b362d;--paper:#ebe2cd;--paper2:#e0d5bb;--card:#f5eedd;--ink:#1d1b17;--ink2:#3b362e;--rule:#c4b697;
+--cream:#f3ead6;--cream2:#d9cfba;--muted:#9a8f7a;--phos:#ffc76b;--red:#e0442b;--orange:#f08a24;--yellow:#f2c230;--teal:#3aa58c;--blue:#2e78c2;--violet:#9b72d0;
+--stripes:linear-gradient(90deg,var(--red) 0 20%,var(--orange) 20% 40%,var(--yellow) 40% 60%,var(--teal) 60% 80%,var(--blue) 80%);
+--hard:7px 7px 0 rgba(0,0,0,.5);
+--head:"Barlow Condensed","Arial Narrow",sans-serif;--sans:"Barlow",-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;color:var(--cream2);font:15.5px/1.6 var(--sans);background:var(--bg);
+background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.09) 0 1px,transparent 1px 3px),radial-gradient(1400px 700px at 50% -20%,rgba(240,138,36,.10),transparent 60%);background-attachment:fixed}
+body::before{content:"";position:fixed;left:0;right:0;top:0;height:6px;background:var(--stripes);z-index:40;box-shadow:0 0 14px rgba(240,138,36,.55)}
+main{width:min(1720px,100%);margin:0 auto;padding:44px 32px 120px}
+@media (max-width:700px){main{padding:24px 16px 80px}}
+.hero{position:relative;margin-bottom:20px;padding-right:300px}
+.hero::after{content:"";position:absolute;right:0;top:4px;width:270px;height:96px;filter:drop-shadow(0 0 14px rgba(240,138,36,.35));
+background:linear-gradient(110deg,transparent 0 22%,var(--red) 22% 33%,var(--orange) 33% 44%,var(--yellow) 44% 55%,var(--teal) 55% 66%,var(--blue) 66% 77%,transparent 77%);opacity:.92}
+@media (max-width:900px){.hero{padding-right:0}.hero::after{display:none}}
+.kicker{font:700 12px var(--mono);letter-spacing:.28em;text-transform:uppercase;color:var(--orange);text-shadow:0 0 8px rgba(240,138,36,.7)}
+.kicker::before{content:"■ ";color:var(--yellow)}.kicker::after{content:"▌";margin-left:4px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+h1{margin:0;font:800 60px/1.0 var(--head);text-transform:uppercase;color:var(--cream);text-shadow:3px 3px 0 rgba(224,68,43,.55),0 0 28px rgba(255,199,107,.22)}
+h1::after{content:"";display:block;width:240px;height:7px;margin:14px 0 16px;background:var(--stripes)}
+h2{font:700 26px/1.1 var(--head);text-transform:uppercase;margin:46px 0 14px;display:flex;align-items:center;gap:12px;color:var(--cream)}
+h2::before{content:"";flex:none;width:30px;height:12px;background:linear-gradient(90deg,var(--red) 0 33%,var(--orange) 33% 66%,var(--yellow) 66%)}
+h3{font:700 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink2);margin:0 0 8px}
+.sub{color:var(--muted);font-size:14px;max-width:1000px;margin:-4px 0 14px}
+.tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:18px 0}
+@media (max-width:1000px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{background:var(--ink);padding:12px 14px;box-shadow:5px 5px 0 rgba(0,0,0,.5);border-top:4px solid var(--c,var(--orange))}
+.tile b{display:block;font:800 36px/1 var(--head);color:var(--c,var(--phos));text-shadow:0 0 12px color-mix(in srgb,var(--c,var(--phos)) 55%,transparent)}
+.tile span{font:700 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#a99a7c}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin:8px 0}
+.group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.glabel{font:700 10px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+button,.chip{font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--cream);background:var(--bg2);border:1px solid var(--edge);padding:6px 11px;cursor:pointer;
+clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px);display:inline-flex;gap:7px;align-items:center}
+button:hover,.chip:hover{border-color:var(--muted)}
+.chip.on{background:var(--orange);border-color:var(--orange);color:var(--ink);box-shadow:0 0 14px rgba(240,138,36,.5)}
+.chip i{width:10px;height:10px}.chip.off{opacity:.38}
+.stage{display:grid;grid-template-columns:1fr 380px;gap:18px}
+body.embed main{padding:0;width:100%}body.embed .hero,body.embed .tiles,body.embed .toolbar,body.embed .panel,body.embed .levels,body.embed footer{display:none}body.embed .stage{display:block}body.embed .viz{height:100vh;box-shadow:none;border-left:0}body.embed::before,body.embed .corner{display:none}
+@media (max-width:1100px){.stage{grid-template-columns:1fr}}
+.viz{position:relative;height:960px;background:#100e0b;border-left:4px solid var(--orange);overflow:hidden;box-shadow:inset 0 0 80px rgba(255,170,60,.07),var(--hard)}
+.viz::before{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle at 50% 50%,rgba(240,138,36,.06),transparent 60%),
+linear-gradient(rgba(243,234,214,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(243,234,214,.03) 1px,transparent 1px);background-size:auto,40px 40px,40px 40px}
+.corner{position:absolute;font:700 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+.tl{left:14px;top:10px}.br{right:14px;bottom:10px}
+svg{display:block;width:100%;height:100%}
+.ring{fill:none;stroke:rgba(243,234,214,.08);stroke-dasharray:3 6}
+.spoke{stroke:rgba(242,194,48,.35);stroke-width:1.5;fill:none}
+.tlink{stroke-width:1.1;fill:none;opacity:.45}
+.slink{stroke:#b0a28a;stroke-dasharray:4 4;fill:none;opacity:.7}
+.flow{fill:none;stroke-width:2;stroke-dasharray:2 14;stroke-linecap:round;animation:flow 1.3s linear infinite;pointer-events:none}
+@keyframes flow{to{stroke-dashoffset:-32}}
+.core circle.c{fill:#100e0b;stroke:var(--yellow);stroke-width:3}
+.core text{font:800 15px var(--head);letter-spacing:.08em;text-transform:uppercase;fill:var(--yellow)}
+.core .halo{fill:none;stroke:var(--yellow);opacity:.25;animation:halo 3s ease-in-out infinite}
+@keyframes halo{50%{opacity:.6}}
+.theme{cursor:pointer}
+.theme .hex{stroke:#100e0b;stroke-width:2}
+.theme text{font:700 13px var(--head);letter-spacing:.05em;text-transform:uppercase;fill:var(--cream);paint-order:stroke;stroke:#100e0b;stroke-width:4px;pointer-events:none}
+.theme .cnt{font:700 10px var(--mono);fill:var(--ink);stroke:none}
+.theme.open .hex{stroke:var(--cream);stroke-width:3}
+.card{cursor:pointer}
+.card .dot{stroke:#100e0b;stroke-width:1.4}
+.card.k-old .dot{fill:transparent!important;stroke:#b0a28a;stroke-dasharray:2 2}
+.card.conf .ring2{fill:none;stroke:var(--red);stroke-width:2;animation:ping 2s ease-out infinite}
+@keyframes ping{0%{r:7;opacity:.9}100%{r:22;opacity:0}}
+.card text{font:600 9.5px var(--mono);fill:var(--cream2);paint-order:stroke;stroke:#100e0b;stroke-width:3.5px;pointer-events:none;opacity:0}
+.card:hover text,.card.sel text,.hit .card.match text{opacity:1}
+.hit .card:not(.match){opacity:.13}.hit .tlink{opacity:.08}
+.hit .card.match .dot{stroke:var(--phos);stroke-width:2.6}
+.card.sel .dot{stroke:var(--cream);stroke-width:3}
+@media (prefers-reduced-motion:reduce){.flow,.core .halo,.card.conf .ring2,.kicker::after{animation:none}}
+.panel{background:var(--paper);padding:20px 22px;box-shadow:var(--hard);clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,0 100%);align-self:start;position:sticky;top:20px;max-height:960px;overflow:auto}
+.panel p,.panel li{color:#1a1712;font-weight:500}
+.panel .lv{display:inline-block;font:700 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;margin:0 6px 8px 0;color:#fff8e8}
+.panel h4{font:800 24px/1.05 var(--head);text-transform:uppercase;color:var(--ink);margin:2px 0 8px}
+.panel .txt{font-size:15px;color:#1a1712;font-weight:500;background:var(--card);border-left:4px solid var(--orange);padding:10px 12px;margin:6px 0 12px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;font-size:13.5px;margin:8px 0}
+.kv span:nth-child(odd){font:700 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:#4a4235;padding-top:3px}
+.kv span:nth-child(even){color:#1a1712;font-weight:500}
+.lab{display:inline-block;font:700 10.5px var(--mono);color:var(--cream);background:var(--ink);padding:1px 7px;margin:0 4px 4px 0}
+.lab.w{background:var(--blue)}.lab.a{background:#5d5446}
+.meter{height:10px;background:rgba(29,27,23,.12);position:relative;margin:4px 0 10px}
+.meter i{position:absolute;left:0;top:0;bottom:0}
+.warn{border-left:4px solid var(--red);background:rgba(224,68,43,.12);color:#5a160b;padding:8px 12px;font-size:14px;font-weight:600;margin:10px 0}
+.ev{font:600 12px var(--mono);color:#2b2721}
+.ev code{background:var(--ink);color:var(--phos);padding:1px 5px;margin-right:4px}
+.levels{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font:600 11px var(--mono);color:var(--muted)}
+.levels span{display:flex;gap:6px;align-items:center}.levels i{width:11px;height:11px;border-radius:50%}
+.find{background:var(--paper);box-shadow:var(--hard);padding:20px 24px;border-top:7px solid;border-image:var(--stripes) 1}
+.find p,.find li{color:#1a1712;font-weight:500}.find strong{color:#000}
+.bars{display:grid;grid-template-columns:150px 1fr 130px;gap:6px 12px;align-items:center;margin:10px 0 4px;max-width:760px}
+.bars span{font:700 11px var(--mono);color:#3b362e;text-transform:uppercase;letter-spacing:.06em}
+.bars div{height:14px;background:rgba(29,27,23,.08)}
+.bars div i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--orange) 0 10px,var(--yellow) 10px 12px)}
+.bars b{font:700 12px var(--mono);color:#1a1712}
+footer{margin-top:44px;font:400 11px var(--mono);color:var(--muted)}
+footer::before{content:"";display:block;width:160px;height:5px;margin-bottom:10px;background:var(--stripes)}
+</style>
+</head>
+<body>
+<main>
+<header class="hero">
+  <div class="kicker" id="kick">Memória</div>
+  <h1>Memória-gyűrűk</h1>
+  <p class="sub" style="color:var(--cream2);margin:0">Az identitás memóriája szintekbe rendezve: középen a mag (a core), körülötte a témák, vagyis a memória-mappák rétegek szerint (személyes, globális, projekt, repó), a témákban a kártyák. Kattints egy témára a kinyitásához, egy kártyára a részletekért. A „Mikor” chipek megmutatják, mit tenne eléd egy hook az adott pillanatban.</p>
+</header>
+<div class="tiles" id="tiles"></div>
+
+<div class="toolbar">
+  <div class="group" id="whenchips"><span class="glabel">Mikor (hook-előnézet)</span></div>
+</div>
+<div class="toolbar">
+  <div class="group" id="levelchips"><span class="glabel">Szint</span></div>
+  <div class="group"><button id="openall">Mind kinyit</button><button id="closeall">Mind becsuk</button></div>
+</div>
+<div class="stage">
+  <div class="viz" id="viz"><span class="corner tl">L4 mag · L3 témák · L2 kártyák</span><span class="corner br" id="stat"></span></div>
+  <aside class="panel" id="panel"><h3>Kártya</h3><p>Nyiss ki egy témát, és kattints egy kártyára.</p></aside>
+</div>
+<div class="levels"><span><i style="background:var(--teal)"></i>biztos</span><span><i style="background:var(--yellow)"></i>valószínű</span><span><i style="background:var(--orange)"></i>bizonytalan</span><span><i style="background:#8a7f6c"></i>elavult</span><span><i style="background:#5a5346"></i>nincs pontozva</span><span><i style="border:1.5px dashed #b0a28a"></i>felülírt</span></div>
+<footer>whaat · forrás: az identitás élő memóriája · szint: a whaat validity (forrás súlya − 0,2 / 120 nap) · ma = <span id="today"></span></footer>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const D = /*DATA*/null;
+const LV = {"certain":"#3aa58c","likely":"#f2c230","uncertain":"#f08a24","stale":"#8a7f6c","unscored":"#5a5346"};
+const LVL = D.levelLabels || {};
+document.getElementById("kick").textContent = D.kicker;
+if (D.embed) document.body.classList.add("embed");
+const THC = ["#e0442b","#f08a24","#f2c230","#3aa58c","#2e78c2","#9b72d0","#d9663a","#c99a0e","#5a9e8c","#6f8fc9","#b07ad6"];
+const themeIds = Object.keys(D.themes);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+document.getElementById('today').textContent = D.today;
+const real = D.cards.filter(c => c.kind !== 'old');
+
+/* tiles */
+const L = D.stats.levels;
+document.getElementById('tiles').innerHTML = [
+  ["Kártya", real.length, "var(--phos)"], [LVL.certain, L.certain||0, LV.certain], [LVL.likely, L.likely||0, LV.likely],
+  [LVL.uncertain, L.uncertain||0, LV.uncertain], ["Felülírt", D.cards.length-real.length, "#b0a28a"], [LVL.unscored, L.unscored||0, LV.unscored]
+].map(([t,n,c]) => `<div class="tile" style="--c:${c}"><b>${n}</b><span>${t}</span></div>`).join('');
+
+/* chips */
+let whenSel = null; const hiddenLv = new Set();
+const wc = document.getElementById('whenchips');
+Object.entries(D.stats.when).sort((a,b)=>b[1]-a[1]).forEach(([w,n]) => {
+  const c = document.createElement('span'); c.className='chip'; c.textContent = `${w} ${n}`;
+  c.onclick = () => { whenSel = whenSel===w ? null : w; wc.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x===c && whenSel)); applyWhen(); };
+  wc.appendChild(c);
+});
+const lc = document.getElementById('levelchips');
+Object.entries(LV).forEach(([l,col]) => {
+  const c = document.createElement('span'); c.className='chip'; c.innerHTML = `<i style="background:${col}"></i>${esc(LVL[l] || l)}`;
+  c.onclick = () => { hiddenLv.has(l) ? hiddenLv.delete(l) : hiddenLv.add(l); c.classList.toggle('off'); rebuild(); };
+  lc.appendChild(c);
+});
+
+/* graph */
+const viz = document.getElementById('viz');
+const W = () => viz.clientWidth, H = () => viz.clientHeight;
+const svg = d3.select(viz).append('svg');
+const defs = svg.append('defs');
+const gl = defs.append('filter').attr('id','glow').attr('x','-60%').attr('y','-60%').attr('width','220%').attr('height','220%');
+gl.append('feGaussianBlur').attr('stdDeviation',3).attr('result','b');
+const fm = gl.append('feMerge'); fm.append('feMergeNode').attr('in','b'); fm.append('feMergeNode').attr('in','SourceGraphic');
+const root = svg.append('g');
+svg.call(d3.zoom().scaleExtent([.4,3.5]).on('zoom', e => root.attr('transform', e.transform)));
+const ringG = root.append('g'), spokeG = root.append('g'), linkG = root.append('g'), slinkG = root.append('g'), cardG = root.append('g'), themeG = root.append('g'), coreG = root.append('g');
+
+const R = () => Math.min(W(), H()) * .30;
+const cx = () => W()/2, cy = () => H()/2;
+const themes = themeIds.map((id,i) => ({id, label:D.themes[id], color:THC[i%THC.length], n: real.filter(c => c.theme===id).length,
+  a: -Math.PI/2 + i*2*Math.PI/themeIds.length}));
+themes.forEach(t => { t.fx = cx() + Math.cos(t.a)*R(); t.fy = cy() + Math.sin(t.a)*R(); t.x=t.fx; t.y=t.fy; t.r = 18 + Math.sqrt(t.n)*3.2; });
+const open = new Set();
+
+ringG.append('circle').attr('class','ring').attr('cx',cx()).attr('cy',cy()).attr('r',R());
+ringG.append('circle').attr('class','ring').attr('cx',cx()).attr('cy',cy()).attr('r',R()*1.55);
+const spokes = spokeG.selectAll('path').data(themes).join('path').attr('class','spoke');
+const spokeFlow = spokeG.selectAll('path.flow').data(themes).join('path').attr('class','flow').attr('stroke','var(--yellow)').attr('filter','url(#glow)').style('opacity',.5);
+const core = coreG.append('g').attr('class','core').attr('transform',`translate(${cx()},${cy()})`);
+core.append('circle').attr('class','halo').attr('r',58);
+core.append('circle').attr('class','c').attr('r',46).attr('filter','url(#glow)');
+core.append('text').attr('text-anchor','middle').attr('dy',-2).text(D.coreLabel);
+core.append('text').attr('text-anchor','middle').attr('dy',16).style('font-size','10px').style('fill','var(--cream2)').text(D.coreFiles);
+core.style('cursor','pointer').on('click', () => showCore());
+
+const hex = r => d3.range(6).map(i => [Math.cos(Math.PI/6 + i*Math.PI/3)*r, Math.sin(Math.PI/6 + i*Math.PI/3)*r]);
+const tg = themeG.selectAll('g').data(themes).join('g').attr('class','theme')
+  .on('click', (e,t) => { open.has(t.id) ? open.delete(t.id) : open.add(t.id); rebuild(); });
+tg.append('polygon').attr('class','hex').attr('points', t => hex(t.r).join(' ')).attr('fill', t => t.color).attr('filter','url(#glow)');
+tg.append('text').attr('class','cnt').attr('text-anchor','middle').attr('dy',4).text(t => t.n);
+tg.append('text').attr('text-anchor','middle').attr('dy', t => t.r + 16).text(t => t.label);
+
+let nodes = [], links = [], slinks = [], sim = null, cardSel, linkSel, slinkSel;
+function rebuild(){
+  const keep = new Map(nodes.map(n => [n.id, n]));
+  const visCards = D.cards.filter(c => open.has(c.theme) && !hiddenLv.has(c.level));
+  nodes = visCards.map(c => { const t = themes.find(t => t.id===c.theme); const k = keep.get(c.id);
+    return Object.assign(k || {x: t.fx + (Math.random()-.5)*40, y: t.fy + (Math.random()-.5)*40}, c, {t}); });
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  links = nodes.map(n => ({source:n.t, target:n}));
+  slinks = nodes.filter(n => n.superseded_by && byId.has(n.superseded_by)).map(n => ({source:byId.get(n.superseded_by), target:n}));
+  tg.classed('open', t => open.has(t.id));
+  linkSel = linkG.selectAll('line').data(links, d => d.target.id).join('line').attr('class','tlink').attr('stroke', d => d.source.color);
+  slinkSel = slinkG.selectAll('line').data(slinks, d => d.target.id).join('line').attr('class','slink');
+  cardSel = cardG.selectAll('g.card').data(nodes, d => d.id).join(enter => {
+    const g = enter.append('g').attr('class', d => `card k-${d.kind}` + (d.conflict ? ' conf' : '') + (d.new ? ' isnew' : ''));
+    g.filter(d => d.new).append('rect').attr('x',-9).attr('y',-9).attr('width',18).attr('height',18).attr('fill','none').attr('stroke','var(--blue)').attr('stroke-width',2).attr('filter','url(#glow)');
+    g.filter(d => d.conflict).append('circle').attr('class','ring2').attr('r',8);
+    g.append('circle').attr('class','dot').attr('r', d => d.kind==='old' ? 6 : 4.5 + Math.min(d.supports,6)*1.1).attr('fill', d => LV[d.level]);
+    g.append('text').attr('dy',-10).attr('text-anchor','middle').text(d => (d.text.length>48 ? d.text.slice(0,46)+'…' : d.text));
+    g.on('click', (e,d) => { e.stopPropagation(); showCard(d); }).call(d3.drag()
+      .on('start',(e,d)=>{ if(!e.active) sim.alphaTarget(.2).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag',(e,d)=>{ d.fx=e.x; d.fy=e.y; }).on('end',(e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
+    return g; });
+  if (sim) sim.stop();
+  sim = d3.forceSimulation([...themes, ...nodes])
+    .force('link', d3.forceLink([...links, ...slinks]).distance(l => l.source.t ? 26 : 34 + l.source.r).strength(.55))
+    .force('charge', d3.forceManyBody().strength(n => n.t ? -26 : -400))
+    .force('collide', d3.forceCollide().radius(n => n.t ? 9 : n.r + 8))
+    .force('out', d3.forceRadial(n => n.t ? R()*1.35 : R(), cx(), cy()).strength(n => n.t ? .05 : 0))
+    .on('tick', tick);
+  document.getElementById('stat').textContent = `${nodes.length} kártya látszik · ${open.size}/${themes.length} téma nyitva`;
+  applyWhen();
+}
+function tick(){
+  spokes.attr('d', t => `M${cx()},${cy()}L${t.x},${t.y}`); spokeFlow.attr('d', t => `M${cx()},${cy()}L${t.x},${t.y}`);
+  tg.attr('transform', t => `translate(${t.x},${t.y})`);
+  linkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  slinkSel.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  cardSel.attr('transform', d => `translate(${d.x},${d.y})`);
+}
+function applyWhen(){
+  root.classed('hit', !!whenSel);
+  if (whenSel){
+    const need = new Set(real.filter(c => c.when.includes(whenSel)).map(c => c.theme));
+    let changed = false; need.forEach(t => { if (!open.has(t)){ open.add(t); changed = true; } });
+    if (changed) return rebuild();
+  }
+  cardSel && cardSel.classed('match', d => whenSel && d.when.includes(whenSel));
+  if (whenSel){
+    const hits = real.filter(c => c.when.includes(whenSel) && (c.level==='certain' || c.level==='likely'));
+    document.getElementById('panel').innerHTML = `<h3>Hook-előnézet: ${esc(whenSel)}</h3><h4>${hits.length} kártya kerülne eléd</h4>
+      <p>Csak a biztos és valószínű szintűek. A bizonytalanok ellenőrzés után, az elavultak soha.</p><ul style="padding-left:18px">` +
+      hits.slice(0,40).map(c => `<li><a href="#" data-id="${c.id}" style="color:#1a1712">${esc(c.text.slice(0,110))}${c.text.length>110?'…':''}</a></li>`).join('') + `</ul>`;
+    document.querySelectorAll('#panel a[data-id]').forEach(a => a.onclick = e => { e.preventDefault(); showCard(D.cards.find(c => c.id===a.dataset.id)); });
+  }
+}
+function showCard(d){
+  if (D.embed) parent.postMessage({ whaat: "select", id: d ? d.id : null }, "*");
+  cardSel && cardSel.classed('sel', n => n.id===d.id);
+  const pct = Math.round((d.score||0)*100);
+  let h = `<span class="lv" style="background:${LV[d.level]};${d.level==='likely'?'color:#1d1b17':''}">${esc(LVL[d.level] || d.level)}</span>` +
+    `<span class="lv" style="background:#3b362e">${esc(d.kind==='old'?'felülírt nézet':d.kind)}</span><h4>${esc(D.themes[d.theme])}</h4>` +
+    `<div class="txt">${esc(d.text)}</div>`;
+  if (d.conflict) h += `<div class="warn">Élő memória lemaradt: ${esc(d.conflict)}</div>`;
+  if (d.new) h += `<div class="warn" style="border-left-color:var(--blue);background:rgba(46,120,194,.12);color:#12345a">Új memória.</div>`;
+  const rel = [...(d.refines ? [['pontosítja', d.refines]] : []), ...((d.refined_by||[]).map(x => ['pontosította', x]))];
+  if (rel.length) h += `<p style="font-size:13.5px">` + rel.map(([t,x]) => { const o = D.cards.find(c => c.id===x); return `${t}: <a href="#" data-id="${x}" style="color:#1a1712;font-weight:700">${esc(o.text.slice(0,90))}…</a>`; }).join('<br>') + `</p>`;
+  if (d.kind==='old') {
+    const n = D.cards.find(c => c.id===d.superseded_by);
+    h += `<p>Felülírta (${esc(d.date)}):</p><div class="txt" style="border-left-color:var(--teal)">${esc(n.text)}</div>`;
+  } else {
+    h += `<div class="meter"><i style="width:${pct}%;background:${LV[d.level]}"></i></div>
+      <div class="kv"><span>pontszám</span><span>${d.score} = forrás súlya − 0,2 / 120 nap (whaat validity)</span>
+      <span>forrás</span><span>${esc(d.source)}</span><span>felezési idő</span><span>${esc(d.halflife)} (${D.halflife[d.halflife]} nap, típusból becsülve)</span>
+      <span>kor</span><span>${d.age_days} nap (legutóbb ${esc(d.date)})</span><span>bevált (held)</span><span>${d.supports}</span>
+      <span>mikor</span><span>${d.when.map(w => `<span class="lab w">${esc(w)}</span>`).join('')}</span>
+      <span>terület</span><span>${d.area.map(w => `<span class="lab a">${esc(w)}</span>`).join('')}</span>
+      <span>fájl</span><span>${d.store.map(esc).join(', ')}</span></div>`;
+    if (d.changed) h += `<h3 style="margin-top:12px">Felülírt korábbi nézet</h3><div class="txt" style="border-left-color:#8a7f6c;text-decoration:line-through;text-decoration-color:var(--red)">${esc(d.changed.old)}</div>`;
+  }
+  document.getElementById('panel').innerHTML = h;
+  document.querySelectorAll('#panel a[data-id]').forEach(a => a.onclick = e => { e.preventDefault(); const c = D.cards.find(c => c.id===a.dataset.id);
+    if (!open.has(c.theme)){ open.add(c.theme); rebuild(); } showCard(nodes.find(n => n.id===c.id) || c); });
+}
+function showCore(){
+  if (D.embed) parent.postMessage({ whaat: "select", id: "__core__" }, "*");
+  document.getElementById('panel').innerHTML = `<span class="lv" style="background:var(--yellow);color:#1d1b17">Mag</span><h4>Core</h4>
+    <p>Ez töltődik be minden session elején: ${D.core.map(c => `<b>${esc(c.name)}</b>`).join(', ') || '(nincs core-fájl)'}.
+    A témák innen ágaznak le, a kártyák a témákból.</p>` + D.core.map(c => `<div class="txt">${esc(c.text)}</div>`).join('');
+}
+svg.on('click', () => { cardSel && cardSel.classed('sel', false); });
+document.getElementById('openall').onclick = () => { themes.forEach(t => open.add(t.id)); rebuild(); };
+document.getElementById('closeall').onclick = () => { open.clear(); whenSel = null; wc.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); rebuild(); };
+rebuild();
+
+// embedded in the whaat memory page: the page draws the level and "when" chips and the card; this frame draws the rings
+if (D.embed) {
+  let resizing;
+  addEventListener("resize", () => { clearTimeout(resizing); resizing = setTimeout(() => {
+    themes.forEach(t => { t.fx = cx() + Math.cos(t.a)*R(); t.fy = cy() + Math.sin(t.a)*R(); });
+    ringG.selectAll('circle').attr('cx', cx()).attr('cy', cy()).attr('r', (_, i) => i ? R()*1.55 : R());
+    core.attr('transform', `translate(${cx()},${cy()})`);
+    rebuild();
+  }, 120); });
+  addEventListener("message", ev => {
+    const m = ev.data;
+    if (!m || !m.whaat) return;
+    if (m.whaat === "filter") {
+      hiddenLv.clear(); (m.hiddenLevels || []).forEach(l => hiddenLv.add(l));
+      whenSel = m.when || null;
+      rebuild();
+    } else if (m.whaat === "select") {
+      const c = m.id && D.cards.find(c => c.id === m.id);
+      if (!c) return;
+      if (!open.has(c.theme)) { open.add(c.theme); rebuild(); }
+      cardSel && cardSel.classed('sel', n => n.id === c.id);
+    } else if (m.whaat === "open") {
+      m.all ? themes.forEach(t => open.add(t.id)) : (open.clear(), whenSel = null);
+      rebuild();
+    }
+  });
+  parent.postMessage({ whaat: "ready", view: "rings", levels: LV, levelLabels: LVL, levelCounts: D.stats.levels, when: D.stats.when }, "*");
+}
+
+</script>
+</body>
+</html>

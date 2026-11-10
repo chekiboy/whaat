@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Builds a double-clickable macOS app with the whaat icon: it starts the server unless it runs and opens whaat in an
+# app window, with no Terminal window.
+# Usage: scripts/macos/build-app [target folder, default ~/Applications] [instance, e.g. dev; default the live one]
+set -euo pipefail
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+TARGET="${1:-$HOME/Applications}"
+INSTANCE="${2:-}"
+NAME="Whaat${INSTANCE:+ ($INSTANCE)}"
+ID="com.whaat-agent.ai${INSTANCE:+.$INSTANCE}"
+APP="$TARGET/$NAME.app"
+UV="$(command -v uv)" || { echo "uv not found on PATH" >&2; exit 1; }
+WORK="$(mktemp -d)"
+
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+
+# the icon: the favicon rendered at 1024 px, then every size macOS asks for
+qlmanage -t -s 1024 -o "$WORK" "$REPO/ui/public/favicon.svg" >/dev/null 2>&1
+mkdir -p "$WORK/whaat.iconset"
+for size in 16 32 128 256 512; do
+  sips -z "$size" "$size" "$WORK/favicon.svg.png" --out "$WORK/whaat.iconset/icon_${size}x${size}.png" >/dev/null
+  double=$((size * 2))
+  sips -z "$double" "$double" "$WORK/favicon.svg.png" --out "$WORK/whaat.iconset/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns "$WORK/whaat.iconset" -o "$APP/Contents/Resources/whaat.icns"
+
+cat > "$APP/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>$NAME</string>
+  <key>CFBundleDisplayName</key><string>$NAME</string>
+  <key>CFBundleIdentifier</key><string>$ID</string>
+  <key>CFBundleExecutable</key><string>whaat</string>
+  <key>CFBundleIconFile</key><string>whaat</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>0.1.0</string>
+  <key>LSUIElement</key><true/>
+</dict>
+</plist>
+PLIST
+
+cat > "$APP/Contents/MacOS/whaat" <<LAUNCH
+#!/bin/bash
+# Built by scripts/macos/build-app; rebuild it when the repo or uv moves.
+mkdir -p "\$HOME/Library/Logs"
+cd "$REPO/server" || exit 1
+${INSTANCE:+export WHAAT_INSTANCE="$INSTANCE"}
+exec "$UV" run whaat app >>"\$HOME/Library/Logs/whaat-app.log" 2>&1
+LAUNCH
+chmod +x "$APP/Contents/MacOS/whaat"
+touch "$APP"
+echo "$APP"

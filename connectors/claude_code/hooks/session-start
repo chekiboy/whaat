@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""SessionStart hook: memory-where --context on this identity's memory, one part of one level per hook command.
+
+    session-start --context global|project|repo N/M   part N of M of that index, printed as is
+    session-start --context map 1/1                   the memory map, printed as is
+    session-start --context personal N/M              part N of M of the personal core, as additionalContext
+
+whaat builds each part and logs the core files it puts in (purpose=load), so memory-frame names them as already in the
+context. The repo key comes from the event's cwd here, as memory-where resolves it. When whaat does not answer, the
+hook starts it through the plugin's CLI once and asks again; without a token it prints nothing.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+
+import whaat_hook
+
+LEVELS = ("global", "map", "project", "repo", "personal")
+
+
+def main():
+    args = sys.argv[1:]
+    if args[:1] != ["--context"] or len(args) not in (2, 3) or args[1] not in LEVELS:
+        sys.exit(__doc__)
+    part, parts = (int(n) for n in (args[2] if len(args) == 3 else "1/1").split("/"))
+    try:
+        event = json.load(sys.stdin)
+    except ValueError:
+        event = {}
+    if not isinstance(event, dict):
+        event = {}
+    cwd = event.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    payload = {
+        "level": args[1],
+        "part": part,
+        "parts": parts,
+        "session": event.get("session_id") or "",
+        "source": event.get("source") or "",
+        "key": whaat_hook.repo_key(cwd) if args[1] in ("project", "repo") else None,
+        "cli": whaat_hook.CLI,
+    }
+    started = whaat_hook.call("/api/v1/memory/recall/start", payload)
+    if started is None and whaat_hook.lookup("WHAAT_TOKEN") and whaat_hook.ensure_server():
+        started = whaat_hook.call("/api/v1/memory/recall/start", payload)
+    text = started and started.get("text")
+    if not text:
+        return
+    if started.get("additional_context"):
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": text}},
+                         ensure_ascii=False))
+    else:
+        print(text)
+
+
+if __name__ == "__main__":
+    main()

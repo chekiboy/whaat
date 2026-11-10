@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""PostToolUse (Read) hook: a Read of a memory is logged, and a history, uncertain or stale memory is named.
+
+whaat logs the read in the identity's memory-reads.log and scores it from memory-validity.json; the note says to check
+the memory before acting on it, or never to act on a superseded one. Index files and personal memories are not logged.
+A Read of any file that is no `.md` costs no request.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+
+import whaat_hook
+
+
+def main():
+    try:
+        event = json.load(sys.stdin)
+        path = (event.get("tool_input") or {}).get("file_path") or ""
+    except (ValueError, AttributeError):
+        return
+    if not path.endswith(".md"):
+        return
+    cwd = event.get("cwd") or os.getcwd()
+    absolute = os.path.realpath(os.path.join(cwd, os.path.expanduser(path)))
+    found = whaat_hook.call("/api/v1/memory/outcome/read",
+                            {"session": str(event.get("session_id", "")), "path": absolute})
+    note = found and found.get("text")
+    if note:
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}}))
+
+
+if __name__ == "__main__":
+    main()

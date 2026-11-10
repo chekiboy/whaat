@@ -1,0 +1,405 @@
+/* The memory list and its details in the app frame: the dark variant of the 2026-11-03 sample. Rows on one dark
+   surface, ARC colours as signals (type, level, the active row), paper only where you read (the details). */
+.sh-main:has(> .mem-split) {
+  padding: 0;
+  overflow: hidden;
+}
+.mem-split {
+  --dw: 0px;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(380px, 1fr) var(--dw);
+  position: relative;
+}
+.mem-list {
+  min-width: 0;
+  overflow: auto;
+  container-type: inline-size;
+}
+.mem-tb .mem-chips {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+.mem-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--edge2);
+  font: 600 10.5px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream2);
+  white-space: nowrap;
+}
+.mem-chip i {
+  width: 8px;
+  height: 8px;
+}
+.mem-chip b {
+  color: var(--muted);
+  font-weight: 600;
+}
+@container (max-width: 760px) {
+  .mem-tb .mem-chips {
+    display: none;
+  }
+}
+.mem-grp {
+  position: sticky;
+  top: 44px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--edge);
+  font: 600 10.5px var(--font-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cream2);
+}
+.mem-grp::before {
+  content: "";
+  width: 14px;
+  height: 6px;
+  background: linear-gradient(90deg, var(--red) 0 33%, var(--orange) 33% 66%, var(--yellow) 66%);
+}
+.mem-grp small {
+  font: inherit;
+  color: var(--muted);
+}
+.mem-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) minmax(0, 34%) 116px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  height: 34px;
+  padding: 0 16px;
+  text-align: left;
+  color: var(--cream);
+  border-bottom: 1px solid rgb(59 54 45 / 0.6);
+}
+.mem-row:hover {
+  background: var(--bg3);
+}
+.mem-row.sel {
+  background: rgb(242 194 48 / 0.1);
+}
+.mem-row.sel::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--red), var(--orange), var(--yellow));
+}
+.mem-row.hist {
+  opacity: 0.55;
+}
+.mem-type {
+  padding: 1px 6px;
+  text-align: center;
+  font: 700 9.5px / 1.5 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff8e8;
+}
+.mem-t {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.mem-p {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 500 11px var(--font-mono);
+  color: var(--muted);
+}
+.mem-stamp {
+  justify-self: end;
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+  font: 700 10px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.mem-stamp b {
+  color: var(--muted);
+  font-weight: 600;
+}
+@container (max-width: 640px) {
+  .mem-row {
+    grid-template-columns: 82px minmax(0, 1fr) 96px;
+  }
+  .mem-row .mem-p {
+    display: none;
+  }
+}
+.mem-none {
+  margin: 24px 16px;
+  font: 500 13px var(--font-mono);
+  color: var(--muted);
+}
+
+/* details: open on a click, a draggable divider before them */
+.mem-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--dw);
+  width: 9px;
+  margin-right: -5px;
+  z-index: 15;
+  cursor: col-resize;
+}
+.mem-grip::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transition: background 0.12s;
+}
+.mem-grip:hover::after,
+.mem-split.dragging .mem-grip::after {
+  width: 2px;
+  background: var(--yellow);
+  box-shadow: 0 0 10px rgb(242 194 48 / 0.7);
+}
+.mem-split.dragging {
+  cursor: col-resize;
+  user-select: none;
+}
+.mem-detail {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg2);
+  border-left: 1px solid var(--edge);
+}
+.mem-dtop {
+  height: 46px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--edge);
+}
+.mem-dtop .t {
+  flex: 1;
+  font: 700 14px var(--font-heading);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cream2);
+}
+.mem-x {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  border: 1px solid var(--edge2);
+  font: 600 13px var(--font-mono);
+}
+.mem-x:hover {
+  color: var(--cream);
+  border-color: var(--yellow);
+}
+.mem-dbody {
+  overflow: auto;
+  padding: 16px 16px 40px;
+}
+.mem-sheet {
+  padding: 18px 20px 20px;
+  border-top: 6px solid;
+  border-image: linear-gradient(
+      90deg,
+      var(--red) 0 20%,
+      var(--orange) 20% 40%,
+      var(--yellow) 40% 60%,
+      var(--stripe-teal) 60% 80%,
+      var(--stripe-blue) 80%
+    )
+    1;
+}
+.mem-sheet .mem-type,
+.mem-sheet .mem-stamp {
+  display: inline-block;
+  margin-right: 10px;
+  padding: 2px 7px;
+}
+.mem-sheet .mem-stamp {
+  border: 1px solid currentColor;
+}
+.mem-dbody .mem-sheet h2 {
+  margin: 10px 0 4px;
+  font: 800 23px / 1.1 var(--font-heading);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.mem-dbody .mem-sheet h2::before {
+  display: none;
+}
+.mem-path {
+  font: 500 12px var(--font-mono);
+  color: #6a5f4c;
+  word-break: break-all;
+}
+.mem-dbody .mem-sheet .narrative {
+  margin: 14px 0 0;
+  padding: 0;
+  border-left: 0;
+  background: none;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+/* a drawing (brain, rings) under its toolbar, the details beside it */
+.dv-pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.dv-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #05070f;
+}
+.dv-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.mem-split.dragging .dv-frame {
+  pointer-events: none;
+  user-select: none;
+}
+.dv-btn {
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--edge2);
+  background: var(--bg3);
+  color: var(--cream2);
+  font: 600 11px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dv-btn:hover {
+  color: var(--cream);
+  border-color: var(--muted);
+}
+.dv-btn.on {
+  color: var(--ink);
+  background: var(--yellow);
+  border-color: var(--yellow);
+}
+.sh-item.off {
+  opacity: 0.4;
+}
+.sh-item .dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+}
+
+/* the selected memory's ties, by direction, below its sheet */
+.dv-links {
+  margin-top: 14px;
+  padding: 12px 14px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--yellow);
+}
+.dv-links h3 {
+  margin: 0 0 8px;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream2);
+}
+.dv-lgroup + .dv-lgroup {
+  margin-top: 8px;
+}
+.dv-lhead {
+  font: 600 10.5px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 2px 0 4px;
+}
+.dv-lhead .arr,
+.dv-lrow .arr {
+  color: var(--yellow);
+  font-weight: 700;
+}
+.dv-lrow {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  text-align: left;
+  font: 500 12px var(--mono);
+  color: var(--cream);
+}
+.dv-lrow:hover {
+  background: var(--bg2);
+}
+.dv-lrow .n,
+.dv-lrow .d {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.dv-lrow .d {
+  grid-column: 2;
+  font: 400 12px var(--sans);
+  color: var(--muted);
+}
+.dv-lrow.ghost .n {
+  text-decoration: line-through dotted;
+  color: var(--muted);
+}
+.dv-lrow.ghost .d {
+  font-style: italic;
+  color: var(--muted);
+}
+.dv-pane .sh-tb {
+  min-width: 0;
+  overflow: hidden;
+}
+.dv-pane .sh-tb .meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dv-pane .sh-search {
+  flex: 0 1 220px;
+  min-width: 90px;
+}
+
+.dv-links .cnt {
+  color: var(--muted);
+  font-weight: 600;
+}

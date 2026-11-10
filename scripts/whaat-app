@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Starts whaat unless it runs and opens it in an app window (no tabs, no address bar).
+# WHAAT_INSTANCE=dev scripts/whaat-app opens the dev instance.
+set -euo pipefail
+cd "$(dirname "$0")/../server"
+exec uv run whaat app "$@"

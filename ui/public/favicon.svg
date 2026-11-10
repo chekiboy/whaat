@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Whaat?!</title>
+  <defs><clipPath id="r"><rect width="64" height="64" rx="12"/></clipPath></defs>
+  <g clip-path="url(#r)">
+    <rect width="64" height="64" fill="#161411"/>
+    <rect y="0" width="13" height="7" fill="#e0442b"/>
+    <rect x="13" y="0" width="13" height="7" fill="#f08a24"/>
+    <rect x="26" y="0" width="12" height="7" fill="#f2c230"/>
+    <rect x="38" y="0" width="13" height="7" fill="#3aa58c"/>
+    <rect x="51" y="0" width="13" height="7" fill="#2e78c2"/>
+    <text x="31" y="56" text-anchor="end" font-family="'Barlow Condensed','Arial Narrow','Helvetica Neue',Arial,sans-serif" font-weight="700" font-size="50" fill="#f3ead6">?</text>
+    <text x="33" y="56" text-anchor="start" font-family="'Barlow Condensed','Arial Narrow','Helvetica Neue',Arial,sans-serif" font-weight="700" font-size="50" fill="#f08a24">!</text>
+  </g>
+</svg>

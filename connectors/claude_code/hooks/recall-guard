@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""PreToolUse (Read, Bash) hook: a memory read outside whaat's recall is answered, not stopped.
+
+The call is declined with a reason the agent can act on: what is wrong (the read leaves no trace of why the
+memory was opened) and the exact `whaat memory` command to run instead; the session goes on. Which paths are this
+identity's memories, and which ones this session already opened or dumped, whaat answers. Only a reader command acting
+on an existing memory is declined: grep, git, writes (`>`, `sed -i`) and heredoc bodies pass, and so does a Read of a
+file this session already opened or dumped through recall (the Edit tool needs that Read). A call that names no `.md`
+file costs no request.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shlex
+import sys
+
+import whaat_hook
+
+READERS = {"cat", "sed", "head", "tail", "less", "more", "bat", "awk", "nl"}
+
+
+def heredoc_end(line):
+    """The delimiter of a heredoc this line opens (`<<WORD`, `<<-WORD`, quoted or not), else None.
+    A here-string (`<<<`) and `<<` inside quoted text open none."""
+    try:
+        words = shlex.split(line, posix=True)
+    except ValueError:
+        return None
+    for i, word in enumerate(words):
+        if word in ("<<", "<<-") and i + 1 < len(words):
+            return words[i + 1]
+        m = re.fullmatch(r"<<-?([^<\s].*)", word)
+        if m and not word.startswith("<<<") and re.search(r"(?<!<)<<(?!<)", line):
+            return m.group(1)
+    return None
+
+
+def segments(command):
+    """Simple commands of a shell line, with heredoc bodies left out."""
+    out, body_end = [], None
+    for line in command.splitlines():
+        if body_end is not None:
+            if line.strip() == body_end:
+                body_end = None
+            continue
+        body_end = heredoc_end(line)
+        out += re.split(r"\|\||&&|[;|&]", line)
+    return out
+
+
+def runs_recall(segment):
+    """True when the segment itself runs whaat (directly or through python)."""
+    try:
+        words = shlex.split(segment, posix=True)
+    except ValueError:
+        words = segment.split()
+    while words and re.match(r"^\w+=", words[0]):
+        words = words[1:]
+    if words and re.fullmatch(r"python3?(\.\d+)?", os.path.basename(words[0])):
+        words = [w for w in words[1:] if not w.startswith("-")]
+    return bool(words) and os.path.basename(words[0]) == "whaat"
+
+
+def read_targets(segment):
+    """The paths a reader command reads, or [] when the segment is no read."""
+    try:
+        words = shlex.split(segment, posix=True)
+    except ValueError:
+        words = segment.split()
+    while words and re.match(r"^\w+=", words[0]):
+        words = words[1:]
+    if not words or os.path.basename(words[0]) not in READERS:
+        return []
+    if os.path.basename(words[0]) == "sed" and any(w == "-i" or w.startswith("-i") for w in words[1:]):
+        return []
+    targets, skip = [], False
+    for word in words[1:]:
+        if skip:
+            skip = False
+            continue
+        if word in (">", ">>", "<<", "<<-", "2>", "&>"):
+            skip = True
+            continue
+        if word.startswith((">", "<<")) or word.startswith("-"):
+            continue
+        targets.append(word)
+    return targets
+
+
+def block(rel):
+    run = f'"{whaat_hook.CLI}" memory'
+    if os.path.basename(rel) == "MEMORY.md":
+        how = (f'{run} index task="<what you are doing>" [path=<repo>]   (to list the triggers), or\n'
+               f'  {run} open file={rel} because="<what you change>" purpose=save   (to edit the index)')
+    else:
+        how = (f'{run} open file={rel} because="<which words of its trigger match your task>"\n'
+               f"  For a read that is not a recall add purpose=save, purpose=curate or purpose=review;\n"
+               f'  for a whole dir: {run} dump dir={os.path.dirname(rel) or "."} purpose=curate because="<why>"')
+    where = "your personal memories" if rel.startswith("personal:") else "the shared memory store"
+    reason = (f"Not read: {rel} in {where} is opened only through memory-recall, so the log records "
+              f"which trigger matched which task; a direct read leaves no trace. Instead run:\n  {how}\n"
+              f"A Read of the file is allowed after that (for Edit). Continue the task after it.")
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                             "permissionDecisionReason": reason}}))
+
+
+def check(event, paths, must_exist):
+    """Ask whaat about the .md paths among these (absolute, resolved); decline the first unopened memory."""
+    paths = [p for p in paths if p.endswith(".md")]
+    if not paths:
+        return
+    found = whaat_hook.call("/api/v1/memory/recall/guard",
+                            {"session": str(event.get("session_id", "")), "paths": paths, "must_exist": must_exist})
+    if found and found.get("file"):
+        block(found["file"])
+
+
+def main():
+    try:
+        event = json.load(sys.stdin)
+        tool, data = event["tool_name"], event.get("tool_input") or {}
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return
+    cwd = event.get("cwd") or os.getcwd()
+
+    def absolute(path):
+        return os.path.realpath(os.path.join(cwd, os.path.expanduser(path)))
+
+    if tool == "Read":
+        path = data.get("file_path", "")
+        if path:
+            check(event, [absolute(path)], must_exist=False)
+        return
+    if tool != "Bash":
+        return
+    targets = [absolute(target) for segment in segments(data.get("command", "")) if not runs_recall(segment)
+               for target in read_targets(segment)]
+    check(event, targets, must_exist=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,15 @@
+# Closed vocabulary for a memory's `when:` field: the moments it must be in front of the agent.
+# Pick a value only when the memory changes what happens at that moment, not when it is merely related;
+# broad values (verification, review) surface many memories, so they need the strongest reason.
+# A new value needs the user's yes. memory-lint reports any value not listed here.
+session-start   read at the start of every session
+push            before git push, opening or merging an MR
+commit          before git commit
+review          while reviewing code, an MR or a document
+writing         while writing text people or agents will read
+cloud           before a call to a cloud provider or monitoring service
+verification    while proving a change or a claim (tests, probes, real runs)
+delegation      while briefing, steering or judging subagents and teammates
+decision        before asking the user, or making a call on their behalf
+scope           before going beyond the literal request
+shell           while composing shell commands

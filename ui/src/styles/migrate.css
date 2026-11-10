@@ -1,0 +1,402 @@
+/* The identity's "bring memory in" page: the identity the memory
+   goes to is the subject of the page. Scoped to .mg. */
+.mg {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.mg-prof {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--edge);
+  background: linear-gradient(90deg, rgba(242, 194, 48, 0.1), transparent 70%);
+}
+.mg-prof .sh-av.mg-big {
+  width: 72px;
+  height: 72px;
+  font-size: 36px;
+  box-shadow:
+    5px 5px 0 var(--orange),
+    0 0 26px rgba(242, 194, 48, 0.35);
+}
+.mg-kicker {
+  font: 600 11px var(--mono);
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.mg-name {
+  font: 700 40px / 1 var(--head);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--phos);
+  text-shadow: 0 0 12px rgba(255, 199, 107, 0.35);
+}
+.mg-meta {
+  font: 12px var(--mono);
+  color: var(--cream2);
+  margin-top: 6px;
+}
+.mg-stamp {
+  border: 3px solid var(--yellow);
+  color: var(--yellow);
+  font: 700 18px var(--head);
+  letter-spacing: 0.12em;
+  padding: 6px 14px;
+  transform: rotate(-4deg);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.mg-warn {
+  margin: 10px 24px 0;
+  padding: 8px 12px;
+  border-left: 4px solid var(--red);
+  background: rgba(224, 68, 43, 0.15);
+  font-size: 14px;
+}
+.mg-layers {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(90px, 1fr));
+  gap: 10px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--edge);
+}
+.mg-lc {
+  border: 1px solid var(--edge2);
+  padding: 8px 10px;
+}
+.mg-lc .k {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.mg-lc .v {
+  font: 700 22px var(--head);
+}
+.mg-lc .v em {
+  font-style: normal;
+  color: var(--teal);
+  font-size: 16px;
+  margin-left: 6px;
+}
+.mg-steps {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--edge);
+}
+.mg-stp {
+  padding: 10px 16px;
+  font: 600 12px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+}
+.mg-stp.on {
+  color: var(--cream);
+  border-color: var(--orange);
+}
+.mg-steps .grow {
+  flex: 1;
+}
+.mg-ghost {
+  border: 1px solid var(--edge2);
+  background: none;
+  padding: 6px 12px;
+  margin-left: 8px;
+  font: 600 12px var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--cream2);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.mg-split {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 65% 35%;
+  min-height: 0;
+}
+.mg-list {
+  overflow: auto;
+  border-right: 1px solid var(--edge);
+}
+.mg-srch {
+  position: sticky;
+  top: 0;
+  background: var(--bg3);
+  font: 600 11px var(--mono);
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  padding: 8px 20px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--edge);
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mg-srch span {
+  letter-spacing: 0;
+  color: var(--cream2);
+  margin-left: 8px;
+  text-transform: none;
+}
+.mg-row {
+  display: grid;
+  grid-template-columns: 22px 88px minmax(0, 1fr) 50px 50px 70px 190px;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 20px;
+  border-bottom: 1px solid var(--edge);
+  cursor: pointer;
+}
+.mg-row:hover {
+  background: var(--bg3);
+}
+.mg-row.sel {
+  background: rgba(240, 138, 36, 0.12);
+  box-shadow: inset 3px 0 0 var(--orange);
+}
+.mg-row.off {
+  opacity: 0.45;
+}
+.mg-row.hdr {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  cursor: default;
+}
+.mg-row.hdr:hover {
+  background: none;
+}
+.mg-row .dir {
+  font: 13px var(--mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mg-row input.dir {
+  background: var(--bg);
+  border: 1px solid var(--edge2);
+  color: var(--cream);
+  padding: 2px 6px;
+}
+.mg-row .num {
+  font: 12px var(--mono);
+  text-align: right;
+  color: var(--cream2);
+}
+.mg-row .num.z {
+  color: var(--edge2);
+}
+.mg-row .num.cf {
+  color: var(--red);
+  font-weight: 600;
+}
+.mg-row .flags {
+  font: 11px var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mg-box {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--muted);
+  display: grid;
+  place-items: center;
+  font: 700 12px var(--mono);
+  background: none;
+  padding: 0;
+  color: #1d1b17;
+  cursor: pointer;
+}
+.mg-box.on {
+  background: var(--yellow);
+  border-color: var(--yellow);
+}
+.mg-box.done {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.mg-lay {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-align: center;
+  padding: 3px 0;
+  color: #1d1b17;
+  text-transform: uppercase;
+}
+.mg-lay.global {
+  background: var(--yellow);
+}
+.mg-lay.project {
+  background: var(--teal);
+}
+.mg-lay.repo {
+  background: var(--blue);
+  color: #fff;
+}
+.mg-lay.personal,
+.mg-lay.core {
+  background: var(--stripe-violet);
+  color: #fff;
+}
+.mg-detail {
+  overflow: auto;
+  padding: 16px 20px;
+}
+.mg-detail h3 {
+  font: 700 18px var(--head);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 2px;
+}
+.mg-from {
+  font: 12px var(--mono);
+  color: var(--muted);
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+.mg-detail h4 {
+  font: 600 11px var(--mono);
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin: 16px 0 6px;
+}
+.mg-f {
+  display: flex;
+  gap: 8px;
+  font: 12px var(--mono);
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--edge);
+}
+.mg-f span:not(.mg-st) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mg-st {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.1em;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  flex: none;
+}
+.mg-st.new {
+  color: var(--teal);
+  border: 1px solid var(--teal);
+}
+.mg-st.same {
+  color: var(--muted);
+  border: 1px solid var(--edge2);
+}
+.mg-st.edited {
+  color: var(--yellow);
+  border: 1px solid var(--yellow);
+}
+.mg-st.conflict {
+  color: #fff;
+  background: var(--red);
+}
+.mg-q {
+  font: 12px var(--mono);
+  color: var(--cream2);
+  background: var(--bg3);
+  padding: 6px 8px;
+  margin: 4px 0;
+  border-left: 3px solid var(--edge2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+.mg-q.note {
+  border-left-color: var(--orange);
+}
+.mg-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--edge);
+  background: var(--bg2);
+  flex-wrap: wrap;
+}
+.mg-go {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--yellow);
+  color: #1d1b17;
+  font: 700 16px var(--head);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  box-shadow: 3px 3px 0 var(--orange);
+  border: 0;
+  cursor: pointer;
+}
+.mg-go:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.mg-go .sh-av {
+  width: 24px;
+  height: 24px;
+  background: #1d1b17;
+  color: var(--yellow);
+}
+.mg-sum {
+  font: 12px var(--mono);
+  color: var(--muted);
+}
+.mg-cmd {
+  flex-basis: 100%;
+  font: 12px var(--mono);
+  color: var(--cream2);
+  user-select: text;
+}
+.mg-cmd code {
+  display: block;
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--edge2);
+  color: var(--phos);
+}
+.mg-empty {
+  padding: 40px 24px;
+  max-width: 720px;
+}
+.mg-empty h2 {
+  font: 700 22px var(--head);
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.mg-empty p {
+  color: var(--cream2);
+}
+.mg-row.hdr .num {
+  font: inherit;
+  color: inherit;
+}
+
+.mg-pick {
+  margin: 16px 24px 8px;
+  color: var(--cream2);
+}
+.mg-picker {
+  display: flex;
+  height: max(320px, calc(100vh - 300px));
+  margin: 0 24px;
+  border: 1px solid var(--edge2);
+}

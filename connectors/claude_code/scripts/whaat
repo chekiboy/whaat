@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Runs the whaat CLI from the repo this plugin lives in, so nothing has to be installed.
+set -euo pipefail
+PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
+exec uv run --quiet --project "$PLUGIN_ROOT/../../server" whaat "$@"

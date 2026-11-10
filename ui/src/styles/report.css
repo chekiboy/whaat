@@ -1,0 +1,1135 @@
+/* The look of the session-report HTML pages (review-html's arc theme), scoped to .rp so the app shell stays as it is. */
+.rp {
+  --bg2: #211e19;
+  --edge: #3b362d;
+  --paper: #ebe2cd;
+  --paper2: #e0d5bb;
+  --card: #f5eedd;
+  --ink: #1d1b17;
+  --ink2: #3b362e;
+  --rule: #c4b697;
+  --cream: #f3ead6;
+  --muted: #9a8f7a;
+  --phos: #ffc76b;
+  --red: #e0442b;
+  --orange: #f08a24;
+  --yellow: #f2c230;
+  --teal: #3aa58c;
+  --blue: #2e78c2;
+  --green: #2f927b;
+  --amber: #c98a06;
+  --du: #2f927b;
+  --dc: #2e78c2;
+  --df: #e2761a;
+  --q: #857a66;
+  --stripes: linear-gradient(
+    90deg,
+    var(--red) 0 20%,
+    var(--orange) 20% 40%,
+    var(--yellow) 40% 60%,
+    var(--teal) 60% 80%,
+    var(--blue) 80%
+  );
+  --head: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --sans: "Barlow", -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font: 15.5px / 1.6 var(--sans);
+}
+.rp nav.toc {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.rp nav.toc a {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cream);
+  text-decoration: none;
+  padding: 5px 10px;
+  border: 1px solid var(--edge);
+  background: var(--bg2);
+}
+.rp nav.toc a:hover {
+  background: var(--yellow);
+  color: var(--ink);
+  border-color: var(--yellow);
+}
+.rp .verdict {
+  position: relative;
+  padding: 20px 24px 18px 34px;
+  margin-bottom: 20px;
+  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.5);
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+}
+.rp .verdict::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+}
+.rp .verdict.v-green::before {
+  background: var(--green);
+}
+.rp .verdict.v-amber::before {
+  background: var(--yellow);
+}
+.rp .verdict.v-red::before {
+  background: var(--red);
+}
+.rp .vhead {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.rp .vlabel {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.rp .vtext {
+  display: inline-block;
+  font: 800 30px / 1.1 var(--head);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 12px;
+  border: 3px solid currentColor;
+  transform: rotate(-1.5deg);
+}
+.rp .v-green .vtext {
+  color: var(--green);
+}
+.rp .v-amber .vtext {
+  color: var(--amber);
+}
+.rp .v-red .vtext {
+  color: var(--red);
+}
+.rp .vsub {
+  color: var(--ink2);
+  font-size: 14.5px;
+  font-weight: 500;
+}
+.rp .dash {
+  position: sticky;
+  top: 6px;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 0;
+  background: linear-gradient(var(--background) 80%, rgba(22, 20, 17, 0));
+}
+.rp .tiles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rp .tools {
+  display: flex;
+  gap: 6px;
+}
+.rp .tile {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg2);
+  border: 1px solid var(--edge);
+  padding: 8px 14px 10px;
+  cursor: pointer;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+}
+.rp .tile::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--c, var(--muted));
+}
+.rp .tile b {
+  font: 700 22px / 1 var(--mono);
+  color: color-mix(in srgb, var(--c, var(--cream)) 72%, #fff);
+}
+.rp .tile.all::after {
+  background: var(--stripes);
+}
+.rp .tile.all b {
+  color: var(--cream);
+}
+.rp .tile.active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+.rp .tile.active b {
+  color: var(--ink);
+}
+.rp .tile:hover {
+  border-color: var(--c, var(--muted));
+}
+.rp .k-du {
+  --c: var(--du);
+}
+.rp .k-dc {
+  --c: var(--dc);
+}
+.rp .k-df {
+  --c: var(--df);
+}
+.rp .k-q {
+  --c: var(--q);
+}
+.rp .tools button {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream);
+  background: transparent;
+  border: 1px solid var(--muted);
+  padding: 6px 11px;
+  cursor: pointer;
+}
+.rp .tools button:hover {
+  background: var(--yellow);
+  color: var(--ink);
+  border-color: var(--yellow);
+}
+.rp .pins {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+  gap: 6px 24px;
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  background: #0f0e0b;
+  border: 1px solid var(--edge);
+  box-shadow: inset 0 0 40px rgba(255, 170, 60, 0.09);
+  font-family: var(--mono);
+}
+.rp .pin {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  font-size: 12.5px;
+  min-width: 0;
+}
+.rp .pin span {
+  font: 700 10px var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7d6f52;
+  padding-top: 2px;
+}
+.rp .pin div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--phos);
+  text-shadow: 0 0 7px rgba(255, 180, 70, 0.5);
+}
+.rp .panel {
+  position: relative;
+  margin-top: 28px;
+  box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.5);
+}
+.rp section.panel {
+  padding: 6px 24px 20px;
+}
+.rp details.panel > summary {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 24px;
+  cursor: pointer;
+}
+.rp details.panel > summary::-webkit-details-marker {
+  display: none;
+}
+.rp details.panel .pbody {
+  padding: 0 24px 20px;
+}
+.rp h2 {
+  font: 700 25px / 1.1 var(--head);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 14px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+}
+.rp h2::before {
+  content: "";
+  flex: none;
+  width: 30px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--red) 0 33%, var(--orange) 33% 66%, var(--yellow) 66%);
+}
+.rp h4 {
+  font: 700 17px var(--head);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 16px 0 6px;
+}
+.rp .panel p,
+.rp .panel li {
+  color: #1a1712;
+  font-weight: 500;
+}
+.rp .panel ul {
+  padding-left: 22px;
+  list-style: disc;
+}
+.rp .panel li {
+  margin: 3px 0;
+}
+.rp .panel li::marker {
+  color: var(--orange);
+}
+/* memory-curation's row table, wrapping inside the panel */
+.rp .panel table.cur-rows {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: #1a1712;
+}
+.rp .panel table.cur-rows th {
+  text-align: left;
+  font: 600 10px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  border-bottom: 2px solid var(--ink2);
+  padding: 4px 6px;
+}
+.rp .panel table.cur-rows td {
+  vertical-align: top;
+  padding: 6px;
+  border-bottom: 1px solid var(--paper2);
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+.rp .panel table.cur-rows .cur-n {
+  width: 3ch;
+}
+.rp .panel table.cur-rows .cur-act {
+  width: 13ch;
+  white-space: nowrap;
+  font-family: var(--mono);
+}
+.rp blockquote {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-left: 4px solid var(--orange);
+  background: var(--paper2);
+}
+.rp .jentry + .jentry {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+.rp .narrative {
+  margin: 4px 0 16px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--orange);
+  background: var(--paper2);
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.rp .muted {
+  color: var(--ink2);
+  font-style: italic;
+}
+.rp .cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rp .card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.rp .card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--c, var(--q));
+}
+.rp .card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.18);
+}
+.rp .card[open] {
+  border-color: var(--ink2);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.22);
+}
+.rp details.card > summary {
+  list-style: none;
+  display: grid;
+  grid-template-columns: auto 1fr auto 18px;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 14px 10px 20px;
+  cursor: pointer;
+}
+.rp details.card > summary::-webkit-details-marker {
+  display: none;
+}
+.rp .sev {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  color: #fff8e8;
+  white-space: nowrap;
+  background: var(--c, var(--q));
+}
+.rp .ctitle {
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+}
+.rp .tagline {
+  font: 400 11.5px var(--mono);
+  color: var(--ink2);
+}
+.rp .cbody {
+  padding: 4px 20px 14px 22px;
+  border-top: 1px dashed var(--rule);
+}
+.rp .chev {
+  width: 9px;
+  height: 9px;
+  border-right: 2.5px solid var(--ink2);
+  border-bottom: 2.5px solid var(--ink2);
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+  margin-top: -4px;
+  justify-self: end;
+}
+.rp details[open] > summary .chev {
+  transform: rotate(225deg);
+  margin-top: 4px;
+  border-color: var(--orange);
+}
+.rp .panel ul.options {
+  list-style: none;
+  padding-left: 0;
+}
+.rp .options li {
+  display: flex;
+  gap: 10px;
+}
+.rp .options .lost {
+  color: var(--ink2);
+}
+.rp .field {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  margin: 8px 0;
+}
+.rp .field > span {
+  font: 700 10px var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  padding-top: 4px;
+}
+@media (max-width: 700px) {
+  .rp .field,
+  .rp .pin {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+.rp .verdict p {
+  color: #1a1712;
+  font-weight: 500;
+  margin-top: 8px;
+}
+.rp .moment {
+  padding: 10px 0;
+  border-top: 1px solid var(--rule);
+}
+.rp .moment .field {
+  margin: 4px 0;
+}
+.rp .moment p {
+  margin: 0;
+}
+.rp .moment .context {
+  color: var(--ink2);
+}
+.rp .moment .said {
+  font-weight: 500;
+}
+.rp .moment .taken {
+  color: var(--ink2);
+  font-style: italic;
+}
+.rp .card.history {
+  opacity: 0.7;
+}
+.rp .card .narrative {
+  margin-top: 10px;
+}
+
+/* A memory card's level, as the home page's stamps: tilted, ink-framed, coloured by how far it can be trusted. */
+.rp details.card.scored > summary {
+  grid-template-columns: auto 1fr auto auto 18px;
+}
+.rp .vstamp {
+  justify-self: end;
+  padding: 1px 7px;
+  background: var(--paper);
+  border: 2px solid var(--v, var(--q));
+  color: var(--v, var(--q));
+  font: 700 11px / 1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+.rp .vstamp.certain {
+  --v: var(--green);
+}
+.rp .vstamp.likely {
+  --v: var(--blue);
+}
+.rp .vstamp.uncertain {
+  --v: var(--amber);
+}
+.rp .vstamp.stale {
+  --v: var(--red);
+}
+.rp .vstamp.history {
+  --v: var(--muted);
+}
+.rp .trust {
+  margin-top: 6px;
+}
+
+/* The memory page's search box, in the tiles' dark frame. */
+.memsearch {
+  min-width: 260px;
+  flex: 1;
+  max-width: 420px;
+  padding: 6px 10px;
+  font: 500 13px var(--font-mono, ui-monospace, monospace);
+  color: var(--cream, #f3ead6);
+  background: #211e19;
+  border: 1px solid #3b362d;
+}
+.memsearch:focus {
+  outline: none;
+  border-color: var(--yellow, #f2c230);
+}
+
+/* The Emlékagy frame: the template fills its own window. */
+.mb-frame {
+  display: block;
+  width: 100%;
+  height: 1000px;
+  border: 0;
+  border-left: 4px solid #2e78c2;
+  background: #05070f;
+}
+
+/* A memory card's metadata: two labelled columns, the memory and how far it can be trusted. */
+.rp .mem-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 4px 28px;
+  margin: 10px 0 4px;
+}
+.rp .mem-meta dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 5px 12px;
+  align-content: start;
+}
+.rp .mem-meta h5 {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  border-bottom: 1px dashed var(--rule);
+  padding-bottom: 4px;
+}
+.rp .mem-meta .mf {
+  display: contents;
+}
+.rp .mem-meta dt {
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.rp .mem-meta dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.rp .mchip {
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  background: var(--paper2);
+  border: 1px solid var(--rule);
+  color: var(--ink2);
+}
+.rp .mcount {
+  font: 700 10.5px var(--mono);
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border: 1px solid var(--rule);
+  color: var(--ink2);
+}
+.rp .mcount b.n {
+  font-size: 12.5px;
+  margin-left: 2px;
+}
+.rp .mcount.held b.n {
+  color: var(--green);
+}
+.rp .mcount.misled b.n {
+  color: var(--red);
+}
+.rp .mest {
+  font: 600 10px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--amber);
+  border: 1px dashed var(--amber);
+  padding: 0 6px;
+}
+.rp .mnote {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.rp .mem-body p {
+  margin: 0 0 6px;
+}
+.rp .mem-body ul {
+  margin: 0 0 6px;
+  padding-left: 20px;
+}
+.rp .mem-body code {
+  font: 13px var(--mono);
+  background: rgba(0, 0, 0, 0.07);
+  padding: 0 4px;
+}
+.rp .mlink {
+  font: 600 12px var(--mono);
+  color: var(--blue);
+  background: rgba(46, 120, 194, 0.08);
+  border: 1px solid rgba(46, 120, 194, 0.35);
+  padding: 0 6px;
+  cursor: pointer;
+}
+.rp .mlink:hover {
+  background: rgba(46, 120, 194, 0.18);
+}
+
+/* The Emlékagy as the memory page's drawing: the page's chips and card around the framed brain. */
+.rp .bv-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.rp .bv-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 700 11px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cream);
+  background: var(--bg2);
+  border: 1px solid var(--edge);
+  padding: 6px 11px 7px;
+  cursor: pointer;
+}
+.rp .bv-chip i {
+  width: 10px;
+  height: 10px;
+}
+.rp .bv-chip b.cnt {
+  color: var(--muted);
+}
+.rp .bv-chip.off {
+  opacity: 0.4;
+}
+.rp .bv-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 18px;
+  align-items: start;
+}
+.rp .bv-frame {
+  display: block;
+  width: 100%;
+  height: 820px;
+  border: 0;
+  border-left: 4px solid var(--blue);
+  background: #05070f;
+}
+.rp .bv-card {
+  background: var(--paper);
+  color: var(--ink);
+  padding: 18px 20px;
+  box-shadow: 7px 7px 0 #000;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+  max-height: 820px;
+  overflow: auto;
+}
+.rp .bv-card h4 {
+  font: 800 22px / 1.1 var(--head);
+  text-transform: uppercase;
+  margin: 8px 0 4px;
+}
+.rp .bv-card .mem-meta {
+  grid-template-columns: 1fr;
+}
+.rp .bv-frame.rings {
+  border-left-color: var(--yellow);
+  background: #100e0b;
+}
+.rp .bv-label {
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.rp .bv-chip.on {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+.rp .core-list {
+  padding-left: 18px;
+  font-size: 14px;
+}
+
+/* The Elemzés: the Emlékgráf's analysis sections (distilled/graph_template.html), on the memory page. */
+.rp .an {
+  --bg: #161411;
+  --hard: 7px 7px 0 rgba(0, 0, 0, 0.5);
+}
+.rp .an h2 {
+  color: var(--cream);
+  margin-top: 34px;
+}
+.rp .an-kicker {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+.rp .an-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: -6px 0 16px;
+  max-width: 980px;
+}
+.rp .an-phases {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  padding-top: 26px;
+}
+.rp .an-phases::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
+  height: 5px;
+  background: var(--stripes);
+  box-shadow: 0 0 12px rgba(242, 194, 48, 0.35);
+}
+@media (max-width: 1100px) {
+  .rp .an-phases {
+    grid-template-columns: 1fr;
+  }
+  .rp .an-phases::before {
+    display: none;
+  }
+}
+.rp .an-phase {
+  position: relative;
+  padding: 16px 16px 14px;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.5);
+}
+.rp .an-phase::before {
+  content: "";
+  position: absolute;
+  top: -24px;
+  left: 16px;
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  border: 3px solid var(--orange);
+  box-shadow: 0 0 10px rgba(240, 138, 36, 0.6);
+}
+.rp .an-phase .span {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.1em;
+  color: #7a4a12;
+}
+.rp .an-phase h4 {
+  font: 800 24px / 1.05 var(--head);
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 4px 0 10px;
+}
+.rp .an-phase .who {
+  font: 700 9.5px var(--mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #fff8e8;
+  display: inline-block;
+  padding: 2px 7px;
+  margin-bottom: 4px;
+}
+.rp .an-phase .who.me {
+  background: var(--red);
+}
+.rp .an-phase .who.user {
+  background: var(--teal);
+}
+.rp .an-phase p {
+  color: #1a1712;
+  font-weight: 500;
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+.rp .an-heat {
+  box-shadow: var(--hard);
+  padding: 18px 20px;
+  overflow-x: auto;
+}
+.rp .an-heat .hgrid {
+  display: grid;
+  gap: 4px 6px;
+  align-items: center;
+  min-width: 1000px;
+}
+.rp .an-heat .hh {
+  font: 700 9.5px var(--mono);
+  color: #4a4235;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  height: 92px;
+  text-align: left;
+  justify-self: center;
+}
+.rp .an-heat .hl {
+  font: 700 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a4235;
+  align-self: end;
+}
+.rp .an-heat .rl {
+  font: 600 14px var(--sans);
+  color: #1a1712;
+}
+.rp .an-heat .cell {
+  width: 34px;
+  height: 26px;
+  background: rgba(29, 27, 23, 0.08);
+  border: 1px solid rgba(29, 27, 23, 0.16);
+}
+.rp .an-heat .cell.ep {
+  background: var(--red);
+  border-color: #a12a17;
+  box-shadow: 0 0 10px rgba(224, 68, 43, 0.45);
+}
+.rp .an-heat .cell.mn {
+  background: repeating-linear-gradient(45deg, rgba(224, 68, 43, 0.55) 0 3px, transparent 3px 6px);
+  border-color: rgba(224, 68, 43, 0.5);
+}
+.rp .an-heat .verdict {
+  font: 700 10.5px var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  text-align: center;
+  transform: rotate(-2deg);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+.rp .an-heat .note {
+  font-size: 13px;
+  color: #2b2721;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.rp .an-two {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 22px;
+}
+@media (max-width: 1100px) {
+  .rp .an-two {
+    grid-template-columns: 1fr;
+  }
+}
+.rp .an-box {
+  box-shadow: var(--hard);
+  padding: 18px 20px;
+}
+.rp .an-box h3 {
+  font: 700 17px var(--head);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+.rp .an-box .steps {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+.rp .an-box .step {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border-left: 6px solid var(--teal);
+  padding: 8px 10px;
+}
+.rp .an-box .step b {
+  font: 700 12px var(--mono);
+  color: #1f6e5c;
+}
+.rp .an-box .step span {
+  color: #1a1712;
+  font-weight: 500;
+  font-size: 14px;
+}
+.rp .an-box .crow {
+  display: grid;
+  grid-template-columns: 96px 1fr 26px 1.2fr;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.rp .an-box .crow:last-child {
+  border-bottom: 0;
+}
+.rp .an-box .crow .d {
+  font: 700 11px var(--mono);
+  color: #4a4235;
+}
+.rp .an-box .crow .o {
+  color: #6a5f4c;
+  text-decoration: line-through;
+  text-decoration-color: var(--red);
+  text-decoration-thickness: 2px;
+  font-size: 14px;
+}
+.rp .an-box .crow .ar {
+  color: var(--orange);
+  font: 700 18px var(--mono);
+  text-align: center;
+}
+.rp .an-box .crow .n {
+  color: #1a1712;
+  font-weight: 600;
+  font-size: 14px;
+}
+.rp .an-box .crow.warn .n {
+  color: #8a1d0e;
+}
+.rp .an-hubs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.rp .an-hubs .hub {
+  background: var(--bg2);
+  border: 1px solid var(--edge);
+  padding: 12px 14px;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  color: var(--cream);
+}
+.rp .an-hubs .hub code {
+  font: 700 13px var(--mono);
+  color: var(--phos);
+  text-shadow: 0 0 8px rgba(255, 199, 107, 0.5);
+}
+.rp .an-hubs .hub .c {
+  float: right;
+  font: 800 28px / 1 var(--head);
+  color: var(--orange);
+}
+.rp .an-hubs .hub .date {
+  font: 600 11px var(--mono);
+  color: var(--muted);
+}
+.rp .an-hubs .hub p {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+.rp .an-view {
+  box-shadow: var(--hard);
+  padding: 20px 24px;
+  border-top: 7px solid;
+  border-image: var(--stripes) 1;
+}
+.rp .an .an-view p,
+.rp .an .an-view li {
+  color: #1a1712;
+  font-weight: 500;
+}
+.rp .an-view strong {
+  color: #000;
+}
+.rp .an-view .caveat {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--red);
+  background: rgba(224, 68, 43, 0.12);
+}
+.rp .an-view .caveat ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+.rp .an-view .caveat li {
+  color: #3a1a12;
+}
+.rp .an-foot {
+  margin-top: 44px;
+  font: 400 11px var(--mono);
+  color: var(--muted);
+}
+.rp .an-foot::before {
+  content: "";
+  display: block;
+  width: 160px;
+  height: 5px;
+  margin-bottom: 10px;
+  background: var(--stripes);
+}
+/* the user's word per curation row, and the send bar above the table */
+.rp .panel table.cur-rows .cur-word {
+  width: 28ch;
+}
+.rp .cur-decision {
+  display: grid;
+  gap: 6px;
+}
+.rp .cur-choice {
+  display: flex;
+  gap: 4px;
+}
+.rp .cur-choice button {
+  flex: 1;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border: 1px solid var(--ink2);
+  color: var(--ink2);
+  font: 600 11px var(--mono);
+  background: transparent;
+}
+.rp .cur-choice button.on.apply {
+  background: #2f6b3f;
+  border-color: #2f6b3f;
+  color: var(--paper);
+}
+.rp .cur-choice button.on.reject {
+  background: #8a2f22;
+  border-color: #8a2f22;
+  color: var(--paper);
+}
+.rp .cur-decision textarea {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--paper2);
+  background: #f4eedf;
+  color: #1a1712;
+  font: 12px var(--mono);
+  resize: vertical;
+}
+.rp .cur-send {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.rp .cur-send > button {
+  padding: 6px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 600 12px var(--mono);
+  letter-spacing: 0.06em;
+}
+.rp .cur-send > button:disabled {
+  opacity: 0.45;
+}
+.rp .cur-ok {
+  color: #2f6b3f;
+}
+.rp .cur-error {
+  color: #8a2f22;
+}
+.rp .cur-paste .cur-command {
+  display: block;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: #f4eedf;
+  color: #1a1712;
+  font: 12px var(--mono);
+  overflow-wrap: anywhere;
+}
+/* a proposal the user discarded: closed, kept for the next curation to see */
+.rp .panel table.cur-rows tr.cur-discarded td {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.rp .panel table.cur-rows tr.cur-discarded td.cur-word {
+  opacity: 1;
+  text-decoration: none;
+}

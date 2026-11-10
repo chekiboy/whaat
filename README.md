@@ -8,7 +8,7 @@ The model is the reasoning engine. Whaat provides the continuity around it: what
 
 Whaat is for people who work with AI agents over time and want more than a transcript or a pile of notes. It is for an agent whose past can inform its present, while its memories remain inspectable, correctable and under the user's control.
 
-The agent decides what to remember and writes it; whaat saves it, puts the right memory in front of the agent at the right moment, and helps keep it tidy. Everything stays on your machine, in plain files under git.
+The agent decides what to remember and writes it; whaat saves it, puts the right memory in front of the agent at the right moment, and helps keep it tidy. Everything stays on your machine, in plain files. Whaat initializes a local Git repository for the memory store by default, and every save or change is recorded as a commit. The memory therefore has a complete, inspectable change history that can be reviewed and rolled back.
 
 ![The memory drawn as a brain](docs/screenshots/memory-brain.png)
 
@@ -30,7 +30,7 @@ These concerns are related, but they are not interchangeable. Session End closes
 
 ## What it does
 
-- **Memory in layers.** A memory is a short markdown file with a trigger: when to recall it. It lives at the level it is true for: everywhere, a group of repos, one repo, or the personal layer about the user and how you work together, with a small core read at every session start. Each save is a git commit.
+- **Memory in layers.** A memory is a short markdown file with a trigger: when to recall it. It lives at the level it is true for: everywhere, a group of repos, one repo, or the personal layer about the user and how you work together, with a small core read at every session start. Whaat creates a local Git repository for the memory store by default; every save and subsequent change becomes its own commit, preserving the memory's history.
 - **Recall at the right moment.** Hooks show the agent the core and the triggers that fit the repo it works in, hand it a memory when it opens one, and point direct reads and writes to whaat. Each memory carries a score that fades with age unless the memory is confirmed or proves right in use.
 - **Session lifecycle.** At session start, whaat provides a compact identity core and memory indexes rather than loading the entire archive. The agent can then recall task-relevant memories. At session end, its skills record what happened and what it learned, evaluate memories used during the session, and write a journal entry and session report.
 - **Curation.** A mechanical check and a report propose merges, moves, trims and fixes; you decide each one on a page, and the agent applies them as commits you can undo.

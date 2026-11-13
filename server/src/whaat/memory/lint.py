@@ -1,7 +1,10 @@
 """memory-curation's memory-lint on one identity's memory: mechanical checks, read-only, a markdown report.
 
 Walks every dir holding .md files
-below the memory root, so a new level needs no change here; the personal dir is left out.
+below the memory root, so a new level needs no change here; the personal dir is left out of the checks and the
+report, but its names count: a link to a personal or core memory resolves, and a personal file's `supersedes` makes
+the store file it names history. A broken link whose name matches exactly one memory once case, `-`/`_` and the type
+prefix are set aside (an older name form) gets that memory's name as a suggestion.
 Stale candidates are checked against each repo's last-fetched origin default ref, never a working tree;
 nothing is fetched. Repo roots come from MEMORY_REPO_ROOTS (colon-separated); without it, no path is checked.
 Validity: a score starts at the `source` weight and loses 0.2 per 120 days since the latest of `confirmed`, the last
@@ -137,6 +140,38 @@ def _personal(rel: str) -> bool:
     return rel == PERSONAL_DIR or rel.startswith(PERSONAL_DIR + os.sep)
 
 
+def _personal_names(personal: str) -> tuple[set[str], dict[str, str]]:
+    """The personal dir's memory names, core included, and what its files supersede ({old name: `personal:<name>`});
+    read only for resolving links and history, never checked or reported."""
+    stems: set[str] = set()
+    superseded: dict[str, str] = {}
+    for d, dirs, names in os.walk(personal):
+        dirs[:] = sorted(x for x in dirs if not x.startswith("."))
+        for n in sorted(names):
+            if not is_memory_file(d, n, personal):
+                continue
+            stems.add(n[:-3])
+            parsed, _ = parse(os.path.join(d, n))
+            old = (parsed or {}).get("supersedes")
+            if old:
+                superseded.setdefault(old, f"personal:{n[:-3]}")
+    return stems, superseded
+
+
+def _name_key(name: str) -> str:
+    key = name.strip().lower().replace("-", "_")
+    for typ in (*TYPES, "user"):
+        if key.startswith(typ + "_"):
+            return key[len(typ) + 1 :]
+    return key
+
+
+def _suggestion(link: str, stems: set[str]) -> str:
+    """` (now [[<name>]]?)` when exactly one memory's name matches the link in an older form, else nothing."""
+    matches = sorted(stem for stem in stems if _name_key(stem) == _name_key(link))
+    return f" (now [[{matches[0]}]]?)" if len(matches) == 1 else ""
+
+
 @dataclass
 class Scan:
     """What the checks found, before the report is written: the lint renders it, the curation brief picks from it."""
@@ -227,6 +262,7 @@ def scan(
             if re.search(r"/Users/[^/\s]+/", body):
                 problems.append((p, "abs-path", "uses /Users/<name> instead of ~"))
 
+    personal_stems, personal_superseded = _personal_names(roots.personal)
     stems = {os.path.basename(p)[:-3] for p in files}
     superseded: dict[str, str] = {}
     for p, (front, _, _) in sorted(files.items()):
@@ -235,30 +271,32 @@ def scan(
             problems.append((p, "supersedes", f"{superseded[old]} supersedes {old!r} too; keep one"))
         elif old:
             superseded[old] = p
+    retired = {**personal_superseded, **superseded}
     history: dict[str, str] = {}
     for rel, mds, entries in listings:
         for n in mds:
             p, stem = os.path.join(rel, n), n[:-3]
-            if stem in superseded and n in entries:
+            if stem in retired and n in entries:
                 problems.append(
                     (
                         p,
                         "supersedes",
-                        f"{superseded[stem]} supersedes it, yet it is indexed: if the pair "
+                        f"{retired[stem]} supersedes it, yet it is indexed: if the pair "
                         "is right, drop this index line, else fix that file's supersedes name",
                     )
                 )
-            elif stem in superseded:
-                history[p] = superseded[stem]
+            elif stem in retired:
+                history[p] = retired[stem]
             elif n not in entries:
                 problems.append((p, "unindexed", "no line in this dir's MEMORY.md"))
     for old, by in sorted(superseded.items()):
-        if old not in stems:
+        if old not in stems | personal_stems:
             problems.append((by, "supersedes", f"supersedes {old!r}, which does not exist"))
+    known = stems | personal_stems
     for p, (_, body, _) in files.items():
         for link in sorted(set(re.findall(r"\[\[([^\]]+)\]\]", body))):
-            if link not in stems:
-                problems.append((p, "broken-link", f"[[{link}]]"))
+            if link not in known:
+                problems.append((p, "broken-link", f"[[{link}]]{_suggestion(link, known)}"))
 
     keys = sorted(set(files) - set(history))
     sig = {p: words(os.path.basename(p)[:-3] + " " + files[p][0].get("description", "")) for p in keys}

@@ -43,6 +43,52 @@ def test_lint_reports_the_live_checks_and_leaves_the_personal_dir_out(
     assert text.startswith("# memory-lint — ")
 
 
+def test_links_into_the_personal_dir_resolve_and_an_older_name_form_gets_a_suggestion(
+    client: TestClient, trial: dict[str, str], settings: Any
+) -> None:
+    personal = settings.state_dir / "identities/trial/memory/personal"
+    write(personal / "core/user_profile.md", "---\nname: user_profile\ndescription: d\n---\nB.\n")
+    write(
+        personal / "feedback_pair_review.md",
+        "---\nname: feedback_pair_review\ndescription: d\ntype: feedback\n---\nB.\n",
+    )
+    body = "[[user_profile]] [[feedback_pair_review]] [[user-profile]] [[pair-review]] [[gone]]"
+    save(
+        client,
+        trial,
+        "reference_links.md",
+        f"---\nname: reference_links\ndescription: d\ntype: reference\n---\n{body}\n",
+    )
+
+    text = client.post("/api/v1/memory/lint", json={}, headers=trial).json()["text"]
+
+    assert "[[user_profile]] |" not in text
+    assert "[[feedback_pair_review]] |" not in text
+    assert "| reference_links.md | broken-link | [[user-profile]] (now [[user_profile]]?) |" in text
+    assert "| reference_links.md | broken-link | [[pair-review]] (now [[feedback_pair_review]]?) |" in text
+    assert "| reference_links.md | broken-link | [[gone]] |" in text
+
+
+def test_a_store_file_a_personal_memory_supersedes_is_history_not_unindexed(
+    client: TestClient, trial: dict[str, str], settings: Any
+) -> None:
+    memory = settings.state_dir / "identities/trial/memory"
+    write(
+        memory / "reference_old_pointer.md",
+        "---\nname: reference_old_pointer\ndescription: d\ntype: reference\n---\nB.\n",
+    )
+    new = (
+        "---\nname: reference_new_pointer\ndescription: d\ntype: reference\n"
+        "supersedes: reference_old_pointer\n---\nB.\n"
+    )
+    write(memory / "personal/reference_new_pointer.md", new)
+
+    text = client.post("/api/v1/memory/lint", json={}, headers=trial).json()["text"]
+
+    assert "| reference_old_pointer.md | unindexed |" not in text
+    assert "- history: reference_old_pointer.md, superseded by personal:reference_new_pointer" in text
+
+
 def test_only_an_identity_lints_its_own_memory(client: TestClient) -> None:
     assert client.post("/api/v1/memory/lint", json={}).status_code == 401
 

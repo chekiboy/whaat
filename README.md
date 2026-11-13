@@ -102,6 +102,34 @@ The plugin's skills run as `/whaat:<name>`: `memory` (save), `memory-recall`, `m
 
 For a single session without connecting, `claude --plugin-dir /path/to/whaat/connectors/claude_code` loads the plugin, with `WHAAT_TOKEN` set in its environment.
 
+## Try it next to your current setup
+
+If you already run Claude Code with your own memory skills, hooks or `CLAUDE.md` rules, connect whaat to a separate Claude Code config instead of your regular one. Both then work in the same project folder: `claude` starts your usual setup, and the separate config starts an agent that works through whaat.
+
+Claude Code takes its settings, skills, agents, hooks and session history from the folder in `CLAUDE_CONFIG_DIR` (`~/.claude` when it is not set). whaat does not create that folder for you yet, so you choose what goes into it.
+
+1. Create the folder and copy in what you want to keep from your regular config, for example `skills/` and `agents/`. Leave out your own memory skills and memory hooks: whaat's plugin provides recall, saving and the session end.
+   ```
+   mkdir -p ~/.claude-whaat
+   ```
+2. Connect it from your project folder, with `--global`:
+   ```
+   cd /path/to/your/project
+   CLAUDE_CONFIG_DIR=~/.claude-whaat uv run --project /path/to/whaat/server whaat connect <name> --global
+   ```
+   The token and the plugin go into `~/.claude-whaat/settings.json`, and your regular `settings.json` is not touched. Without `--global` the token would go into the project's `.claude/settings.local.json`, which your regular setup reads too.
+3. Start Claude Code with that config, in the same project folder:
+   ```
+   CLAUDE_CONFIG_DIR=~/.claude-whaat claude
+   ```
+   The first start asks you to log in, because the login does not carry over from your regular config. The variable applies to this one start only: plain `claude` still opens your usual setup, and the two can run at the same time.
+4. Bring your existing memory in with the migration (step 5 of Getting started). It only reads the sources, so your regular setup keeps working as before.
+
+If your project lives inside your home folder, Claude Code can also load `~/.claude/CLAUDE.md` as a file of a parent folder. To keep its memory rules out of the whaat sessions, add the file's full path to `claudeMdExcludes` in `~/.claude-whaat/settings.json`:
+```json
+"claudeMdExcludes": ["/Users/<you>/.claude/CLAUDE.md"]
+```
+
 ## How it is built
 
 ```

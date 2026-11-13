@@ -92,7 +92,8 @@ The links that came with the sources come first, before any new one. The import 
 they are and follows only the names it renamed itself, so a link in an older form (kebab case, a missing or extra type
 prefix, an old core name) stays broken. Run `whaat memory lint` and read its `broken-link` rows: where exactly one
 memory matches, it suggests the current name. Lint leaves the personal dir out of its report, so read
-`whaat memory dump dir=personal: purpose=save because="check the links after the import"` and `dir=personal:core` too, and check their links against the
+`whaat memory dump dir=personal: purpose=save because="check the links after the import"` and the same with
+`dir=personal:core` too, and check their links against the
 memory's file names. Rewrite only the link's name, through the whaat:memory skill, with the rest of the file exactly
 as the dump gave it (the dump adds one newline after each file); a core file only on the user's yes.
 

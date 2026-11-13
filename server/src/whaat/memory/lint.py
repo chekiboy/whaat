@@ -21,6 +21,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from whaat.memory.migration import ALL_TYPES
 from whaat.memory.recall import Roots
 from whaat.memory.validity import (
     DECAY_PER_DAY,
@@ -33,6 +34,7 @@ from whaat.memory.validity import (
     index_entries,
     is_memory_file,
     parse,
+    personal_names_and_supersedes,
     recall_outcomes,
     validity,
 )
@@ -140,27 +142,9 @@ def _personal(rel: str) -> bool:
     return rel == PERSONAL_DIR or rel.startswith(PERSONAL_DIR + os.sep)
 
 
-def _personal_names(personal: str) -> tuple[set[str], dict[str, str]]:
-    """The personal dir's memory names, core included, and what its files supersede ({old name: `personal:<name>`});
-    read only for resolving links and history, never checked or reported."""
-    stems: set[str] = set()
-    superseded: dict[str, str] = {}
-    for d, dirs, names in os.walk(personal):
-        dirs[:] = sorted(x for x in dirs if not x.startswith("."))
-        for n in sorted(names):
-            if not is_memory_file(d, n, personal):
-                continue
-            stems.add(n[:-3])
-            parsed, _ = parse(os.path.join(d, n))
-            old = (parsed or {}).get("supersedes")
-            if old:
-                superseded.setdefault(old, f"personal:{n[:-3]}")
-    return stems, superseded
-
-
 def _name_key(name: str) -> str:
     key = name.strip().lower().replace("-", "_")
-    for typ in (*TYPES, "user"):
+    for typ in ALL_TYPES:
         if key.startswith(typ + "_"):
             return key[len(typ) + 1 :]
     return key
@@ -262,8 +246,9 @@ def scan(
             if re.search(r"/Users/[^/\s]+/", body):
                 problems.append((p, "abs-path", "uses /Users/<name> instead of ~"))
 
-    personal_stems, personal_superseded = _personal_names(roots.personal)
+    personal_stems, personal_superseded = personal_names_and_supersedes(roots.personal)
     stems = {os.path.basename(p)[:-3] for p in files}
+    known = stems | personal_stems
     superseded: dict[str, str] = {}
     for p, (front, _, _) in sorted(files.items()):
         old = front.get("supersedes")
@@ -290,9 +275,8 @@ def scan(
             elif n not in entries:
                 problems.append((p, "unindexed", "no line in this dir's MEMORY.md"))
     for old, by in sorted(superseded.items()):
-        if old not in stems | personal_stems:
+        if old not in known:
             problems.append((by, "supersedes", f"supersedes {old!r}, which does not exist"))
-    known = stems | personal_stems
     for p, (_, body, _) in files.items():
         for link in sorted(set(re.findall(r"\[\[([^\]]+)\]\]", body))):
             if link not in known:

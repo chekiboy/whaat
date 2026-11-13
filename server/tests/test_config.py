@@ -75,7 +75,7 @@ def test_an_instance_gets_its_own_port_name_and_state_dir_unless_overridden(
 def test_whaat_is_the_default_and_the_live_archive_stays_claudes_while_another_instance_keeps_its_data_inside(
     env: dict[str, str], expected: dict[str, Path], tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    for name in ("WHAAT_INSTANCE", "WHAAT_IDENTITIES", "WHAAT_DEFAULT_IDENTITY"):
+    for name in ("WHAAT_INSTANCE", "WHAAT_IDENTITIES", "WHAAT_DEFAULT_IDENTITY", "WHAAT_LIVE_IDENTITIES"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("CLAUDE_PRIVATE_ARCHIVE", "/live/archive")
     monkeypatch.setenv("WHAAT_STATE_DIR", str(tmp_path / "state-dir"))

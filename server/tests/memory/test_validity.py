@@ -86,6 +86,25 @@ def test_refresh_scores_from_source_and_latest_anchor_and_leaves_personal_out(
     assert data["memories"]["acme/shop/feedback_gone.md"]["history"] == "acme/shop/feedback_now.md"
 
 
+def test_a_store_file_a_personal_memory_supersedes_is_history_and_not_scored(
+    client: TestClient, trial: dict[str, str], folder: Path
+) -> None:
+    memory = folder / "memory"
+    write(memory / "acme/shop/reference_old_pointer.md", memory_file("reference_old_pointer", confirmed="2026-10-01"))
+    write(
+        memory / "personal/reference_new_pointer.md",
+        memory_file("reference_new_pointer", supersedes="reference_old_pointer"),
+    )
+
+    post(client, trial, "validity/refresh")
+    entry = json.loads((folder / "state/memory-validity.json").read_text())["memories"][
+        "acme/shop/reference_old_pointer.md"
+    ]
+
+    assert entry.get("history") == "personal:reference_new_pointer"
+    assert "score" not in entry
+
+
 def test_a_read_is_logged_and_a_weak_memory_named_but_not_a_personal_one_or_an_index(
     client: TestClient, trial: dict[str, str], folder: Path
 ) -> None:

@@ -14,7 +14,7 @@ import re
 import subprocess
 import tempfile
 
-from whaat.memory.recall import DIR_MODE, LOG_NAME, Roots
+from whaat.memory.recall import DIR_MODE, LOG_NAME, PERSONAL, Roots
 
 SOURCE_BASE: dict[str | None, float] = {"measured": 1.0, "user-decision": 1.0, "inference": 0.75, None: 0.9}
 DECAY_PER_DAY = 0.2 / 120
@@ -164,6 +164,24 @@ def is_memory_file(directory: str, name: str, store: str) -> bool:
     return name != MEMORY_MAP or os.path.realpath(directory) != os.path.realpath(store)
 
 
+def personal_names_and_supersedes(personal: str) -> tuple[set[str], dict[str, str]]:
+    """The personal dir's memory names, core included, and what its files supersede ({old name: `personal:<name>`}),
+    so a store link to a personal memory resolves and a store file a personal memory supersedes is history."""
+    stems: set[str] = set()
+    superseded: dict[str, str] = {}
+    for d, dirs, names in os.walk(personal):
+        dirs[:] = sorted(x for x in dirs if not x.startswith("."))
+        for n in sorted(names):
+            if not is_memory_file(d, n, personal):
+                continue
+            stems.add(n[:-3])
+            parsed, _ = parse(os.path.join(d, n))
+            old = (parsed or {}).get("supersedes")
+            if old:
+                superseded.setdefault(old, f"{PERSONAL}{n[:-3]}")
+    return stems, superseded
+
+
 def score_store(store: str, state: str, today: datetime.date) -> dict[str, dict[str, object]]:
     """{rel path: entry} for every memory file outside the personal dir; history files carry `history`."""
     files: dict[str, tuple[dict[str, str], bool]] = {}
@@ -174,7 +192,11 @@ def score_store(store: str, state: str, today: datetime.date) -> dict[str, dict[
             rel = os.path.relpath(os.path.join(d, n), store)
             fm, _ = parse(os.path.join(d, n))
             files[rel] = (fm or {}, n in index)
-    superseded = {fm["supersedes"]: rel for rel, (fm, _) in sorted(files.items()) if fm.get("supersedes")}
+    _, by_personal = personal_names_and_supersedes(os.path.join(store, PERSONAL_DIR))
+    superseded = {
+        **by_personal,
+        **{fm["supersedes"]: rel for rel, (fm, _) in sorted(files.items()) if fm.get("supersedes")},
+    }
     added, last = commit_dates(store)
     held, counts = recall_outcomes(state, {os.path.basename(p)[:-3]: last.get(p, "") for p in files})
     entries: dict[str, dict[str, object]] = {}

@@ -39,6 +39,35 @@ These concerns are related, but they are not interchangeable. Session End closes
 - **Several identities.** Each agent identity has its own folder, git history and token. A token reads and writes only its own identity; the admin token, which the UI uses, sees all of them.
 - **An app to look at it all.** A home page per identity, the memory as a list, a brain and rings, the reports, the curation and migration pages, the settings, and an experimental terminal that runs agent sessions in tmux.
 
+
+## Under the Hood: Why Whaat?! Is Different
+
+Most memory systems focus on retrieval: store information, find relevant notes, and put them into a model's context. But retrieving a memory does not make it true, current, or safe to rely on.
+
+Whaat treats memory as an **inspectable, versioned and self-correcting knowledge lifecycle**. A memory is more than a piece of text: it has a source, a validity score, an outcome history and a place in an identity's evolving knowledge.
+
+- **Epistemic scoring (`Truthness & Validity`).** Whaat distinguishes where a memory came from from whether it is still valid. `Truthness` captures its source and subsequent outcomes (`held`, `misled`, `irrelevant`); `Validity` tracks its level, score and age. The validity score decays by 0.2 per 120 days, with confirmation and successful use feeding back into its lifecycle. The personal core is treated separately and does not participate in this decay calculation.
+
+- **Enforced recall, not passive retrieval (`Recall & Write Guards`).** An agent should not have to remember to remember. Whaat's Claude Code hooks guide supported memory access through the runtime: `recall-guard` directs direct-read attempts toward a logged `memory open` operation with an explicit reason, while `memory-frame` brings the relevant memory context into the session. Write guards route memory changes through Whaat's validated storage path.
+
+- **Memory carries its own warnings.** Recalled memories include their Truthness and Validity information, including source, score and age. The agent is instructed to treat stale or uncertain information cautiously, regard weakly supported memories as assumptions rather than rules, and never apply historical records as current facts without checking.
+
+- **Evidence-driven, human-controlled curation.** Memory maintenance is not simply an LLM being asked to clean up notes. Whaat builds structured curation reports with candidate actions, reasons and evidence. Mechanical checks help constrain proposed changes; the user reviews the actions, and accepted changes are applied through Whaat's versioned storage workflow.
+
+- **Inspectable history, not a black box.** Memories are human-readable files in an identity-specific store. Whaat records saves and subsequent changes as Git commits, so the evolution of an identity's knowledge can be inspected, reviewed and rolled back.
+
+| Capability | Raw `CLAUDE.md` / Auto-memory | Vector-based RAG memory | **Whaat?!** |
+| :--- | :--- | :--- | :--- |
+| Human-readable memory | Yes | Often indirect | **Yes** |
+| Versioned memory history | Manual / external | Implementation-dependent | **Automatic Git commits** |
+| Source and confidence awareness | Limited | Implementation-dependent | **Truthness & Validity** |
+| Time-based validity and outcome feedback | No built-in lifecycle | Implementation-dependent | **Scored validity with outcome feedback** |
+| Guided memory recall | Agent-dependent | Usually retrieval-driven | **Recall hooks and explicit access logging** |
+| Session-aware memory lifecycle | Manual / custom | Implementation-dependent | **Session hooks, framing and outcomes** |
+| Human-reviewed maintenance | Manual editing | Implementation-dependent | **Structured curation and approval** |
+
+Whaat does not just give an agent access to its past. It gives that past structure, provenance, feedback and a history that can be inspected and corrected.
+
 ## What it looks like
 
 The home page of an identity: who the agent is, what happened on the last active days, and what waits for you.

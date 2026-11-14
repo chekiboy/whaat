@@ -61,7 +61,7 @@ The pictures show generated sample data.
 
 ## Status
 
-Version 0.1.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code only, and the terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
+Version 0.2.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code only, and the terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Requirements
 
@@ -162,4 +162,4 @@ Robert Kovács: [LinkedIn](https://www.linkedin.com/in/robert-kovacs-122512118/)
 
 ## License
 
-Free for anyone to use, copy, change and share, under the [Apache License 2.0](LICENSE).
+Licensed under the [Business Source License 1.1 (BUSL-1.1)](LICENSE). Copying, modification, redistribution and non-production use are permitted under its terms. Additional Use Grant: None. The Change Date is 2030-11-14 (or the fourth anniversary of first public distribution of this version, whichever comes first), after which the Change License is GPL-2.0-or-later. The previous 0.1.0 release remains under Apache License 2.0.

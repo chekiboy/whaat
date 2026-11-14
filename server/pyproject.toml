@@ -1,9 +1,9 @@
 [project]
 name = "whaat"
-version = "0.1.0"
+version = "0.2.0"
 description = "Whaat?! Not just an agent. An agent with a past."
 readme = "README.md"
-license = "Apache-2.0"
+license = "BUSL-1.1"
 authors = [
     { name = "robert.kovacs", email = "robert.kovacs.ut@gmail.com" }
 ]

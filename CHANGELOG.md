@@ -2,6 +2,13 @@
 
 What changed in each version of whaat. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0, a new minor version (0.2, 0.3) may change the API, the CLI or the file formats.
 
+## 0.2.0 (2026-11-14)
+
+### Changed
+
+- **License.** This version is licensed under Business Source License 1.1 (BUSL-1.1), with no Additional Use Grant, a Change Date of 2030-11-14, and GPL-2.0-or-later as the Change License. Version 0.1.0 remains under Apache License 2.0.
+- Bumped the project version to 0.2.0.
+
 ## 0.1.0 (2026-11-10)
 
 The first version. It runs on macOS and connects to Claude Code.

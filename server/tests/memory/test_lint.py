@@ -1,3 +1,4 @@
+import datetime
 from pathlib import Path
 from typing import Any
 
@@ -154,3 +155,18 @@ def test_the_fidelity_table_marks_every_old_sentence_the_new_text_no_longer_hold
     assert "3 sentences; 2 kept word for word; 1 to account for" in text
     assert "| 2 | **account for it** | Story of how we found it. |" in text
     assert "| 1 | kept in feedback_rule.md | Keep the trap. |" in text
+
+
+def test_lint_counts_an_outcome_that_came_after_the_last_change_on_the_same_day(
+    client: TestClient, trial: dict[str, str], settings: Any
+) -> None:
+    save(client, trial, "feedback_fixed.md", "---\nname: feedback_fixed\ndescription: d\ntype: feedback\n---\nB.\n")
+    after = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
+    write(
+        settings.state_dir / "identities/trial/state/memory-outcomes.log",
+        f"{after}\tmisled\tfeedback_fixed.md\tabcd1234\n",
+    )
+
+    text = client.post("/api/v1/memory/lint", json={}, headers=trial).json()["text"]
+
+    assert "- misled: feedback_fixed — check that it was fixed or superseded" in text

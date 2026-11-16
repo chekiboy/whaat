@@ -29,7 +29,7 @@ from whaat.memory.validity import (
     PERSONAL_DIR,
     SOURCE_BASE,
     as_date,
-    commit_dates,
+    commit_times,
     git,
     index_entries,
     is_memory_file,
@@ -189,7 +189,9 @@ def scan(
     sizes: list[tuple[str, int, int]] = []
     listings: list[tuple[str, list[str], dict[str, str]]] = []
     vocabulary = when_vocabulary()
-    added, last = commit_dates(store)
+    first, changed_at = commit_times(store)
+    added = {p: t[:10] for p, t in first.items()}
+    last = {p: t[:10] for p, t in changed_at.items()}
     for d, dirs, names in os.walk(store):
         rel = os.path.relpath(d, store)
         rel = "" if rel == "." else rel
@@ -292,7 +294,7 @@ def scan(
         if j >= dup_threshold:
             dups.append((j, a, b))
 
-    held, counts = recall_outcomes(str(roots.state), {os.path.basename(p)[:-3]: last.get(p, "") for p in files})
+    held, counts = recall_outcomes(str(roots.state), {os.path.basename(p)[:-3]: changed_at.get(p, "") for p in files})
     levels: dict[str, int] = {}
     weak = []
     undated = 0

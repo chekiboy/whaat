@@ -252,6 +252,33 @@ def test_the_instructions_say_when_each_tool_is_for() -> None:
     assert [name for name in SKILL_CALLS if name not in IDENTITY_FIRST + INSTRUCTIONS] == []
 
 
+def test_an_outcome_counts_when_it_came_after_the_last_change_even_on_the_same_day(
+    client: TestClient, settings: Settings, token: str
+) -> None:
+    import datetime
+
+    save = {"path": "acme/shop/feedback_x.md", "content": CONTENT, "trigger": "When x"}
+    opening = {"file": "acme/shop/feedback_x.md", "because": "x is what the task does"}
+    calls(client, settings, token, ("memory_save", save))
+    now = datetime.datetime.now().astimezone()
+    log = settings.state_dir / "identities" / "trial" / "state" / "memory-outcomes.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text(
+        f"{now.date().isoformat()}\tmisled\tacme/shop/feedback_x.md\told-day-line\n"
+        f"{(now - datetime.timedelta(hours=1)).isoformat(timespec='seconds')}\tmisled\tacme/shop/feedback_x.md\tb4\n"
+    )
+
+    _, opened = calls(
+        client,
+        settings,
+        token,
+        ("memory_record", {"outcome": "held", "paths": ["acme/shop/feedback_x.md"]}),
+        ("memory_open", opening),
+    )
+
+    assert "since its last change held 1, misled 0, irrelevant 0" in opened.content[0].text
+
+
 def test_a_curation_brief_over_mcp_tells_its_agent_to_read_the_dir_with_the_mcp_tool(
     client: TestClient, settings: Settings, token: str
 ) -> None:

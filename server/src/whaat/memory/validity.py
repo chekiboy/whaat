@@ -85,13 +85,20 @@ def load_origins(store: str) -> dict[str, dict[str, str]]:
 
 
 def commit_dates(store: str) -> tuple[dict[str, str], dict[str, str]]:
-    """Per current path: the day it was first added (followed across renames and moves) and the day it last changed.
-    `--relative` limits the log to the memory dir and names paths from it, as in a store that is its own repo. A file a
-    migration brought in keeps its source's days: the import commit counts as neither its first nor its last change."""
+    """Per current path: the day it was first added and the day it last changed, as `commit_times` finds them."""
+    added, last = commit_times(store)
+    return {p: t[:10] for p, t in added.items()}, {p: t[:10] for p, t in last.items()}
+
+
+def commit_times(store: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Per current path: when it was first added (followed across renames and moves) and when it last changed, as ISO
+    commit times. `--relative` limits the log to the memory dir and names paths from it, as in a store that is its own
+    repo. A file a migration brought in keeps its source's days: the import commit counts as neither its first nor its
+    last change."""
     origins = load_origins(store)
     changes: list[tuple[str, list[str]]] = []
     current = None
-    out = git(store, "log", "--relative", "-M", "--format=%x00%cs", "--name-status") or ""
+    out = git(store, "log", "--relative", "-M", "--format=%x00%cI", "--name-status") or ""
     for line in out.splitlines():
         if line.startswith("\0"):
             current = line[1:]
@@ -108,7 +115,7 @@ def commit_dates(store: str) -> tuple[dict[str, str], dict[str, str]]:
             added.pop(path, None)
             last.pop(path, None)
             continue
-        elif path not in added and (origin := origins.get(path)) and origin.get("imported") == day:
+        elif path not in added and (origin := origins.get(path)) and origin.get("imported") == day[:10]:
             added[path] = origin.get("added") or day
             last[path] = origin.get("last") or day
             continue
@@ -133,12 +140,21 @@ def recall_outcomes(state: str, changed: dict[str, str]) -> tuple[dict[str, str]
                 stem = os.path.basename(rel)[:-3]
                 if stem not in changed:
                     continue
-                if day > changed[stem]:
+                if _after(day, changed[stem]):
                     counts.setdefault(stem, {}).setdefault(outcome, 0)
                     counts[stem][outcome] += 1
                 if outcome == "held":
-                    held[stem] = max(day, held.get(stem, day))
+                    held[stem] = max(day[:10], held.get(stem, day[:10]))
     return held, counts
+
+
+def _after(event: str, change: str) -> bool:
+    """An outcome logged after the change: by the second when both carry a time (the same second counts, as a commit
+    and an outcome on it can share one), else by the day, strictly, since an outcome of the change's own day may have
+    come before it."""
+    if len(event) > 10 and len(change) > 10:
+        return datetime.datetime.fromisoformat(event) >= datetime.datetime.fromisoformat(change)
+    return event[:10] > change[:10]
 
 
 def as_date(value: object) -> datetime.date | None:
@@ -197,8 +213,9 @@ def score_store(store: str, state: str, today: datetime.date) -> dict[str, dict[
         **by_personal,
         **{fm["supersedes"]: rel for rel, (fm, _) in sorted(files.items()) if fm.get("supersedes")},
     }
-    added, last = commit_dates(store)
-    held, counts = recall_outcomes(state, {os.path.basename(p)[:-3]: last.get(p, "") for p in files})
+    first, changed = commit_times(store)
+    added = {p: t[:10] for p, t in first.items()}
+    held, counts = recall_outcomes(state, {os.path.basename(p)[:-3]: changed.get(p, "") for p in files})
     entries: dict[str, dict[str, object]] = {}
     for rel, (fm, indexed) in sorted(files.items()):
         stem = os.path.basename(rel)[:-3]
@@ -291,7 +308,7 @@ def levels(roots: Roots, paths: list[str]) -> str:
 def _append(roots: Roots, name: str, fields: list[str]) -> None:
     roots.state.mkdir(mode=DIR_MODE, parents=True, exist_ok=True)
     with (roots.state / name).open("a", encoding="utf-8") as handle:
-        handle.write("\t".join([datetime.date.today().isoformat(), *fields]) + "\n")
+        handle.write("\t".join([datetime.datetime.now().astimezone().isoformat(timespec="seconds"), *fields]) + "\n")
 
 
 def read_note(roots: Roots, session: str, path: str) -> str | None:

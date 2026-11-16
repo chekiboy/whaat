@@ -118,10 +118,12 @@ def test_a_read_is_logged_and_a_weak_memory_named_but_not_a_personal_one_or_an_i
         "Memory acme/shop/feedback_gone.md is superseded by acme/shop/feedback_now.md: history, never act on it."
     )
     assert fresh.json()["text"] is personal.json()["text"] is index.json()["text"] is None
-    assert (folder / "state/memory-reads.log").read_text().splitlines() == [
-        f"{TODAY.isoformat()}\tread\tacme/shop/feedback_gone.md\tabcd1234",
-        f"{TODAY.isoformat()}\tread\tacme/shop/feedback_new.md\tabcd1234",
+    logged = [line.split("\t") for line in (folder / "state/memory-reads.log").read_text().splitlines()]
+    assert [fields[1:] for fields in logged] == [
+        ["read", "acme/shop/feedback_gone.md", "abcd1234"],
+        ["read", "acme/shop/feedback_new.md", "abcd1234"],
     ]
+    assert all(datetime.datetime.fromisoformat(fields[0]).date() == TODAY for fields in logged)
     assert post(client, trial, "outcome/reads", session="abcd1234").json()["text"] == (
         "acme/shop/feedback_gone.md\nacme/shop/feedback_new.md"
     )

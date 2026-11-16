@@ -7,6 +7,7 @@ from whaat.identities.registry import IdentityRegistry
 from whaat.journal.exceptions import (
     CurationReportNotFoundError,
     InvalidStoredDocumentError,
+    UndecidedRowsError,
     UnknownIdentityError,
     UnknownRowsError,
 )
@@ -84,7 +85,7 @@ def save_curation_applied(
         _, commit, warnings = service.save_curation_applied(call.report_id, identity, call.rows)
     except CurationReportNotFoundError as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err)) from err
-    except UnknownRowsError as err:
+    except (UnknownRowsError, UndecidedRowsError) as err:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(err)) from err
     except InvalidStoredDocumentError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err)) from err

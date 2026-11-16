@@ -74,6 +74,24 @@ def test_applied_cells_are_written_and_emptied_without_touching_the_decisions(
     assert client.post("/api/v1/journal/curation-reports/applied", json=unknown, headers=CLAUDE).status_code == 422
 
 
+def test_a_row_the_user_did_not_decide_as_apply_gets_no_commits_but_can_be_emptied(client: TestClient) -> None:
+    report_id = client.post("/api/v1/journal/curation-reports", json={"report": REPORT}, headers=CLAUDE).json()[
+        "report_id"
+    ]
+    rejected = {"report_id": report_id, "rows": [{"n": 2, "decision": "reject", "note": None}]}
+    client.post("/api/v1/curation/decisions", json=rejected, headers=ADMIN)
+
+    def applied(n: int, value: str | None) -> Any:
+        body = {"report_id": report_id, "rows": [{"n": n, "applied": value}]}
+        return client.post("/api/v1/journal/curation-reports/applied", json=body, headers=CLAUDE)
+
+    undecided, refused, emptied = applied(1, "store abc1234"), applied(2, "store abc1234"), applied(1, None)
+
+    assert (undecided.status_code, refused.status_code, emptied.status_code) == (422, 422, 200)
+    assert undecided.json()["detail"].startswith("rows 1 are not decided as apply")
+    assert refused.json()["detail"].startswith("rows 2 are not decided as apply")
+
+
 def test_a_revert_takes_the_memory_and_its_index_line_back(
     client: TestClient, trial: dict[str, str], settings: Any
 ) -> None:

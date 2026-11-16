@@ -10,6 +10,7 @@ from whaat.identities.registry import ADMIN, Principal
 from whaat.journal.exceptions import (
     CurationReportNotFoundError,
     InvalidStoredDocumentError,
+    UndecidedRowsError,
     UnknownIdentityError,
     UnknownRowsError,
 )
@@ -160,9 +161,11 @@ class JournalService:
         self, report_id: str, identity: str, applied: list[CurationApplied]
     ) -> tuple[str, str | None, list[str]]:
         """apply-rows' Applied cells (the row's commits; null empties it after a revert), on the identity's own report
-        only; the decisions and everything else in the report stay as they are."""
+        only; the decisions and everything else in the report stay as they are. A row gets commits only once the user
+        decided it as apply: the Applied cell may never claim an approval the user did not give."""
         updates = {a.n: {"applied": a.applied} for a in applied}
-        return self._update_curation_rows(report_id, identity, updates, APPLIED_COMMIT_MESSAGE)
+        approved = [a.n for a in applied if a.applied is not None]
+        return self._update_curation_rows(report_id, identity, updates, APPLIED_COMMIT_MESSAGE, approved)
 
     def curation_document(self, report_id: str) -> tuple[str, CurationReportDocument]:
         """The identity and the document of a curation report, for the page; CurationReportNotFoundError if none."""
@@ -185,7 +188,12 @@ class JournalService:
         return root, ReportFile(root, root.path / rel)
 
     def _update_curation_rows(
-        self, report_id: str, identity: str | None, updates: Mapping[int, Mapping[str, object]], message: str
+        self,
+        report_id: str,
+        identity: str | None,
+        updates: Mapping[int, Mapping[str, object]],
+        message: str,
+        approved: list[int] | None = None,
     ) -> tuple[str, str | None, list[str]]:
         root, report = self._curation_report(report_id, identity)
         warnings: list[str] = []
@@ -196,6 +204,10 @@ class JournalService:
             unknown = sorted(set(updates) - {row.n for row in document.body.rows})
             if unknown:
                 raise UnknownRowsError(unknown)
+            decided = {row.n: row.decision for row in document.body.rows}
+            undecided = sorted(n for n in approved or [] if decided[n] != "apply")
+            if undecided:
+                raise UndecidedRowsError(undecided)
             rows = [
                 row.model_copy(update=dict(updates[row.n])) if row.n in updates else row for row in document.body.rows
             ]

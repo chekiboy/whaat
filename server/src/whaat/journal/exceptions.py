@@ -16,6 +16,14 @@ class UnknownRowsError(ValueError):
         self.numbers = numbers
 
 
+class UndecidedRowsError(ValueError):
+    def __init__(self, numbers: list[int]) -> None:
+        super().__init__(
+            f"rows {', '.join(map(str, numbers))} are not decided as apply on the report page: nothing is applied there"
+        )
+        self.numbers = numbers
+
+
 class InvalidStoredDocumentError(Exception):
     def __init__(self, report_id: str, reason: str) -> None:
         super().__init__(f"{report_id} is not a valid document ({reason}), so it is left as it is")

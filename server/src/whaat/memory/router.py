@@ -85,12 +85,20 @@ IdentityDep = Annotated[str, Depends(require_identity)]
 
 
 @router.post("/memories", response_model=SavedMemory, status_code=status.HTTP_201_CREATED)
-def save_memory(memory: MemorySave, service: MemoryServiceDep, identity: IdentityDep) -> SavedMemory:
-    """Write the memory and its index line exactly as given, drop the index lines it supersedes, commit those paths."""
+def save_memory(request: Request, memory: MemorySave, service: MemoryServiceDep, identity: IdentityDep) -> SavedMemory:
+    """Write the memory and its index line exactly as given, drop the index lines it supersedes, commit those paths;
+    the warnings add what memory-lint finds in the saved file."""
     try:
-        return service.save(identity, memory)
+        saved = service.save(identity, memory)
     except InvalidMemoryPathError as err:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(err)) from err
+    try:
+        scan = lint.scan(service.roots(identity), list(request.app.state.settings.memory_repo_roots))
+    except Exception as err:  # the memory is saved and committed by now: a lint failure must not read as a failed save
+        saved.warnings.append(f"memory-lint did not run: {err}")
+        return saved
+    saved.warnings += [f"memory-lint {check}: {detail}" for path, check, detail in scan.problems if path == saved.path]
+    return saved
 
 
 @router.delete("/memories/{path:path}", response_model=SavedMemory)
@@ -105,9 +113,13 @@ def delete_memory(path: str, service: MemoryServiceDep, identity: IdentityDep) -
 
 
 @router.get("/where", response_model=MemoryRoots)
-def memory_where(service: MemoryServiceDep, identity: IdentityDep) -> MemoryRoots:
-    """The calling identity's memory root and personal dir, as absolute paths."""
-    return service.where(identity)
+def memory_where(service: MemoryServiceDep, identity: IdentityDep, key: str | None = None) -> MemoryRoots:
+    """The calling identity's memory root and personal dir, as absolute paths; with key=<project>/<repo>, as the
+    caller resolved it from its git remote, that project's and repo's memory dirs too."""
+    try:
+        return service.where(identity, key)
+    except InvalidMemoryPathError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(err)) from err
 
 
 @router.get("/browse", response_model=list[IdentityMemory])
@@ -155,7 +167,13 @@ def recall_frame(call: FrameCall, service: MemoryServiceDep, identity: IdentityD
     opened = [(line.file, line.path) for line in call.opened]
     roots = service.roots(identity)
     context = recall.frame(
-        roots, call.session, call.agent, opened, call.force, describe=lambda rel: validity.quality(roots, rel)
+        roots,
+        call.session,
+        call.agent,
+        opened,
+        call.force,
+        describe=lambda rel: validity.quality(roots, rel),
+        uncapped=call.uncapped,
     )
     return Framed(context=context)
 
@@ -170,7 +188,15 @@ def recall_guard(call: GuardCall, service: MemoryServiceDep, identity: IdentityD
 def recall_start(call: StartCall, service: MemoryServiceDep, identity: IdentityDep) -> dict[str, object]:
     """memory-where --context: one SessionStart hook's part of an index or of the personal core, the loads logged."""
     return session_start.session_start(
-        service.roots(identity), call.level, call.part, call.parts, call.session, call.source, call.key, call.cli
+        service.roots(identity),
+        call.level,
+        call.part,
+        call.parts,
+        call.session,
+        call.source,
+        call.key,
+        call.cli,
+        call.outline,
     )
 
 
@@ -445,7 +471,7 @@ def memory_curation_brief(
     rel = "" if call.dir.strip("/") in ("", ".") else call.dir.strip("/")
     if rel not in curation_brief.dirs(scan):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{call.dir!r} is not a memory dir")
-    return Text(text=curation_brief.brief(scan, rel))
+    return Text(text=curation_brief.brief(scan, rel, call.dump))
 
 
 def _graph_identity(request: Request, principal: Principal, identity: str | None) -> str:
@@ -524,7 +550,7 @@ def memory_curation_refute_brief(
     rel = "" if call.dir.strip("/") in ("", ".") else call.dir.strip("/")
     if rel not in curation_brief.dirs(scan):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{call.dir!r} is not a memory dir")
-    return Text(text=curation_brief.refute_brief(scan, rel, call.rows))
+    return Text(text=curation_brief.refute_brief(scan, rel, call.rows, call.dump))
 
 
 @router.post("/fidelity", response_model=Text)

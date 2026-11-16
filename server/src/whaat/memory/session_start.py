@@ -196,10 +196,41 @@ def personal_start(roots: Roots, source: str, part: int, parts: int, session: st
     return (head + "\n" if part == 1 else f"[memory] personal core, part {part}:\n") + body
 
 
+OUTLINE_SENTENCE = 200
+
+
+def personal_outline(roots: Roots) -> str | None:
+    """One line per personal core file: its description and the first sentence of its body; nothing is logged, since
+    the core itself is not put in. For a client whose instructions cannot hold the whole core."""
+    core = os.path.join(roots.personal, "core")
+    names = sorted(n for n in os.listdir(core) if n.endswith(".md")) if os.path.isdir(core) else []
+    lines = []
+    for name in names:
+        with open(os.path.join(core, name), encoding="utf-8") as handle:
+            text = handle.read()
+        m = re.match(r"---\n(.*?)\n---\n?(.*)", text, re.S)
+        front, body = (m.group(1), m.group(2)) if m else ("", text)
+        found = re.search(r"^description:\s*(.*)$", front, re.M)
+        description = found.group(1).strip().strip("\"'") if found else ""
+        first = re.split(r"(?<=[.!?])\s", " ".join(body.split()), maxsplit=1)[0][:OUTLINE_SENTENCE]
+        lines.append(f"- {PERSONAL}core/{name} — {description}: {first}")
+    return "\n".join(lines) or None
+
+
 def session_start(
-    roots: Roots, level: str, part: int, parts: int, session: str, source: str, key: list[str] | None, cli: str
+    roots: Roots,
+    level: str,
+    part: int,
+    parts: int,
+    session: str,
+    source: str,
+    key: list[str] | None,
+    cli: str,
+    outline: bool = False,
 ) -> dict[str, object]:
     """What one SessionStart hook prints: plain text for an index level, additionalContext for the personal core."""
+    if level == "personal" and outline:
+        return {"text": personal_outline(roots), "additional_context": False}
     if level == "personal":
         text = personal_start(roots, source, part, parts, session, cli)
         return {"text": text, "additional_context": True}

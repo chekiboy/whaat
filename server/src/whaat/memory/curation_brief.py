@@ -61,7 +61,7 @@ def dirs(s: Scan) -> list[str]:
     return [rel for rel, _, _ in s.listings]
 
 
-def brief(s: Scan, rel: str) -> str:
+def brief(s: Scan, rel: str, dump: str = "cli") -> str:
     items = candidates(s).get(rel, [])
     refs = [f"- {repo}: {ref or 'no origin ref'} @ {date or '?'}" for repo, (ref, date, _) in sorted(s.refs.items())]
     listing = "\n".join(f"- {p}: {check} — {detail}" for p, check, detail in items) or "- (none)"
@@ -70,18 +70,19 @@ def brief(s: Scan, rel: str) -> str:
     return (
         text.replace("{{DIR}}", rel or "(global: the memory root)")
         .replace("{{FILES}}", str(count))
-        .replace(
-            "{{DUMP}}",
-            f'{WHAAT} memory dump dir={rel or "."} purpose=curate because="curation judge of {rel or "global"}"',
-        )
+        .replace("{{DUMP}}", _dump(rel, "judge", dump))
         .replace("{{REFS}}", "\n".join(refs) or "- (no repo refs)")
         .replace("{{CANDIDATES}}", listing)
         .replace("{{CANDIDATE_COUNT}}", str(len(items)))
     )
 
 
-def _dump(rel: str, who: str) -> str:
-    return f'{WHAAT} memory dump dir={rel or "."} purpose=curate because="curation {who} of {rel or "global"}"'
+def _dump(rel: str, who: str, dump: str = "cli") -> str:
+    """How the agent reads the dir: the CLI's command, or the MCP tool call for an agent that has whaat's MCP tools."""
+    because = f"curation {who} of {rel or 'global'}"
+    if dump == "mcp":
+        return f'memory_dump(dir="{rel or "."}", purpose="curate", because="{because}")'
+    return f'{WHAAT} memory dump dir={rel or "."} purpose=curate because="{because}"'
 
 
 def _refs(s: Scan) -> str:
@@ -89,13 +90,13 @@ def _refs(s: Scan) -> str:
     return "\n".join(lines) or "- (no repo refs)"
 
 
-def refute_brief(s: Scan, rel: str, rows: list[dict[str, Any]]) -> str:
+def refute_brief(s: Scan, rel: str, rows: list[dict[str, Any]], dump: str = "cli") -> str:
     """The refuter's fixed text with the judge's rows of this dir, as the judge returned them."""
     text = REFUTE_FILE.read_text(encoding="utf-8")
     listed = json.dumps(rows, indent=1, ensure_ascii=False)
     return (
         text.replace("{{DIR}}", rel or "(global: the memory root)")
-        .replace("{{DUMP}}", _dump(rel, "refuter"))
+        .replace("{{DUMP}}", _dump(rel, "refuter", dump))
         .replace("{{REFS}}", _refs(s))
         .replace("{{ROWS}}", listed)
     )

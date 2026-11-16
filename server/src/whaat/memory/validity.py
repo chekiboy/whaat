@@ -355,7 +355,10 @@ def record(roots: Roots, session: str, outcome: str, paths: list[str]) -> str:
         raise OutcomeError("no session id: pass <session8>, or run inside Claude Code")
     lines, done = [], 0
     for rel in paths:
-        if not rel.endswith(".md") or _personal(rel) or not os.path.isfile(os.path.join(roots.store, rel)):
+        if rel.startswith("personal:") or _personal(rel):
+            lines.append(f"skipped {rel}: personal memories are not scored, so their outcomes are not recorded")
+            continue
+        if not rel.endswith(".md") or not os.path.isfile(os.path.join(roots.store, rel)):
             lines.append(f"skipped {rel}: not a memory file in the store (use the path `reads` prints)")
             continue
         _append(roots, OUTCOMES_LOG, [outcome, rel, session])

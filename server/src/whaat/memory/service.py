@@ -92,10 +92,17 @@ class MemoryService:
     def identity_folders(self) -> list[Path]:
         return list(self._registry.folders().values())
 
-    def where(self, identity: str) -> MemoryRoots:
+    def where(self, identity: str, key: str | None = None) -> MemoryRoots:
         folder = self._registry.folder_of(identity)
         root = folder / MEMORY_DIR
-        return MemoryRoots(memory=str(root), personal=str(root / PERSONAL_DIR), state=str(folder / STATE_DIR_NAME))
+        roots = MemoryRoots(memory=str(root), personal=str(root / PERSONAL_DIR), state=str(folder / STATE_DIR_NAME))
+        if key is None:
+            return roots
+        parts = key.split("/")
+        if len(parts) != 2 or any(part in ("", ".", "..") or "\\" in part for part in parts):
+            raise InvalidMemoryPathError(f"key {key!r} is not <project>/<repo>")
+        roots.project, roots.repo = str(root / parts[0]), str(root / parts[0] / parts[1])
+        return roots
 
     def roots(self, identity: str) -> recall.Roots:
         """The identity's memory, personal and state dirs, for memory-recall's index, open and dump."""

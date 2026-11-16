@@ -152,6 +152,12 @@ export type CurationBriefCall = {
      * The memory dir to judge, below the memory root; "" or "." is the global one.
      */
     dir: string;
+    /**
+     * Dump
+     *
+     * How the brief tells its agent to read the dir: the CLI command, or the MCP tool call.
+     */
+    dump?: 'cli' | 'mcp';
 };
 
 /**
@@ -186,6 +192,12 @@ export type CurationRefuteCall = {
      * The memory dir the rows are from; "" or "." is the global one.
      */
     dir: string;
+    /**
+     * Dump
+     *
+     * How the brief tells its agent to read the dir: the CLI command, or the MCP tool call.
+     */
+    dump?: 'cli' | 'mcp';
     /**
      * Rows
      *
@@ -788,6 +800,12 @@ export type FrameCall = {
      * Session
      */
     session: string;
+    /**
+     * Uncapped
+     *
+     * Put every block in, past the hook's size cap; for a caller without that cap.
+     */
+    uncapped?: boolean;
 };
 
 /**
@@ -1458,6 +1476,18 @@ export type MemoryRoots = {
      * Personal
      */
     personal: string;
+    /**
+     * Project
+     *
+     * The project's memory dir, when a key was given.
+     */
+    project?: string | null;
+    /**
+     * Repo
+     *
+     * The repo's memory dir, when a key was given.
+     */
+    repo?: string | null;
     /**
      * State
      *
@@ -2455,6 +2485,18 @@ export type ReportDetail = {
 };
 
 /**
+ * ReportOpened
+ */
+export type ReportOpened = {
+    /**
+     * Url
+     *
+     * The report's address in the UI.
+     */
+    url: string;
+};
+
+/**
  * ReportSection
  */
 export type ReportSection = {
@@ -2945,6 +2987,12 @@ export type StartCall = {
      * Level
      */
     level: 'global' | 'map' | 'project' | 'repo' | 'personal';
+    /**
+     * Outline
+     *
+     * Personal level only: one line per core file (its description and first sentence), nothing logged; for a client whose instructions cannot hold the whole core.
+     */
+    outline?: boolean;
     /**
      * Part
      */
@@ -4581,9 +4629,23 @@ export type ValidityRefreshResponse = ValidityRefreshResponses[keyof ValidityRef
 export type MemoryWhereData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Key
+         */
+        key?: string | null;
+    };
     url: '/api/v1/memory/where';
 };
+
+export type MemoryWhereErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MemoryWhereError = MemoryWhereErrors[keyof MemoryWhereErrors];
 
 export type MemoryWhereResponses = {
     /**
@@ -4738,6 +4800,36 @@ export type GetReportResponses = {
 };
 
 export type GetReportResponse = GetReportResponses[keyof GetReportResponses];
+
+export type OpenReportData = {
+    body?: never;
+    path: {
+        /**
+         * Report Id
+         */
+        report_id: string;
+    };
+    query?: never;
+    url: '/api/v1/reports/{report_id}/open';
+};
+
+export type OpenReportErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type OpenReportError = OpenReportErrors[keyof OpenReportErrors];
+
+export type OpenReportResponses = {
+    /**
+     * Successful Response
+     */
+    200: ReportOpened;
+};
+
+export type OpenReportResponse = OpenReportResponses[keyof OpenReportResponses];
 
 export type ListTerminalAppsData = {
     body?: never;

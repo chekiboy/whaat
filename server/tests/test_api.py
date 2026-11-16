@@ -67,3 +67,28 @@ def test_a_report_opens_by_its_opaque_key(client: TestClient) -> None:
     assert detail.json()["id"] == listed[0]["id"]
     assert len(listed[0]["key"]) == 16 and listed[0]["id"] not in listed[0]["key"]
     assert client.get("/api/v1/reports/by-key/0000000000000000", headers=AUTH).status_code == 404
+
+
+def test_open_report_opens_its_ui_address_in_the_browser_and_returns_it(client: TestClient) -> None:
+    opened: list[tuple[str, str | None]] = []
+    client.app.state.open_url = lambda url, browser: opened.append((url, browser))  # type: ignore[attr-defined]
+    report = client.get("/api/v1/reports", params={"kind": "review"}, headers=AUTH).json()[0]
+
+    response = client.post(f"/api/v1/reports/{report['id']}/open", headers=AUTH)
+
+    assert response.status_code == 200
+    assert response.json()["url"].endswith(f"/ui/reports/{report['key']}")
+    assert opened == [(response.json()["url"], None)]
+
+
+def test_open_report_refuses_an_unknown_report_and_says_when_no_browser_opens(client: TestClient) -> None:
+    def fail(url: str, browser: str | None) -> None:
+        raise OSError("no browser")
+
+    client.app.state.open_url = fail  # type: ignore[attr-defined]
+    report = client.get("/api/v1/reports", params={"kind": "review"}, headers=AUTH).json()[0]
+
+    assert client.post("/api/v1/reports/artifacts:reviews/nope.md/open", headers=AUTH).status_code == 404
+    refused = client.post(f"/api/v1/reports/{report['id']}/open", headers=AUTH)
+    assert refused.status_code == 409
+    assert "no browser" in refused.json()["detail"]

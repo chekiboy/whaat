@@ -2,6 +2,25 @@
 
 What changed in each version of whaat. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0, a new minor version (0.2, 0.3) may change the API, the CLI or the file formats.
 
+## Unreleased
+
+### Added
+
+- **MCP layer.** `whaat mcp` serves the calls the Claude Code skills make over MCP (stdio), as the identity whose token it gets in `WHAAT_TOKEN`. Its instructions carry an outline of the identity's personal core, and `identity_load` returns the whole core.
+- **API.** `POST /api/v1/reports/{id}/open` opens a report in the UI. `GET /api/v1/memory/where` takes `key=<project>/<repo>` and names that project's and repo's folders. `recall/frame` takes `uncapped`, `recall/start` takes `outline`, and the two curation briefs take `dump` (`cli` or `mcp`).
+
+### Changed
+
+- **Saving a memory** returns what memory-lint finds in the saved file among its warnings; the save itself still goes through.
+- **The outcome and read logs** record the time of each line, not only the day.
+- **`memory record`** says that personal memories are not scored when it skips one.
+- **The memory skill** asks to set `confirmed` after fixing what a memory says, since an edit alone does not reset its age.
+
+### Fixed
+
+- An outcome recorded on the same day as a memory's last change now counts in "since its last change".
+- An Applied cell can no longer be written on a curation row the user did not decide as apply.
+
 ## 0.2.0 (2026-11-14)
 
 ### Changed

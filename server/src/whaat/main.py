@@ -16,6 +16,7 @@ from whaat.journal.service import JournalService
 from whaat.journal.store import FileJournalStore
 from whaat.memory.router import router as memory_router
 from whaat.memory.service import MemoryService
+from whaat.platform.browser import open_url
 from whaat.preferences.router import router as preferences_router
 from whaat.preferences.store import PreferencesStore
 from whaat.reports.router import router as reports_router
@@ -57,6 +58,7 @@ def create_app(settings: Settings, token: str) -> FastAPI:
     app.state.preferences = PreferencesStore(settings.state_dir, settings.terminal_command, default_theme_id)
     app.state.tmux = Tmux(settings, app.state.preferences.command)
     app.state.native_open = open_in
+    app.state.open_url = open_url
     preferences = app.state.preferences
     app.state.terminals = Terminals(
         app.state.tmux,

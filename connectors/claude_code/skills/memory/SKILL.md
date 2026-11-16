@@ -77,7 +77,8 @@ A file with no index line that another file `supersedes` is history: never act o
    must be in front of you, only these values: `session-start`, `push`, `commit`, `review`, `writing`, `cloud`,
    `verification`, `delegation`, `decision`, `scope`, `shell`, in the inline form `[a, b]` (a hook may surface
    it then). `source` says what backs it; an inference never reaches `certain`. `confirmed` is the last day
-   the fact was checked; set it when you re-verify an existing memory. memory-lint scores each memory from
+   the fact was checked; set it when you re-verify an existing memory, and when you fix what it says: an edit
+   alone does not reset its age. memory-lint scores each memory from
    its source, minus 0.2 per 120 days since the latest of `confirmed`, its last `held` outcome (Task end)
    and its first commit. A memory nobody used successfully or checked for about a year turns `stale`
    and becomes a curation `verify` candidate.

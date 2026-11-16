@@ -144,8 +144,8 @@ def test_record_keeps_store_memories_only_and_a_held_one_is_rescored_at_once(
     data = json.loads((folder / "state/memory-validity.json").read_text())
 
     assert recorded.splitlines() == [
-        "skipped personal/user_x.md: not a memory file in the store (use the path `reads` prints)",
-        "skipped personal:user_x.md: not a memory file in the store (use the path `reads` prints)",
+        "skipped personal/user_x.md: personal memories are not scored, so their outcomes are not recorded",
+        "skipped personal:user_x.md: personal memories are not scored, so their outcomes are not recorded",
         "recorded held for 1 memories",
     ]
     assert data["memories"]["acme/shop/feedback_old.md"]["anchors"]["held"] == TODAY.isoformat()

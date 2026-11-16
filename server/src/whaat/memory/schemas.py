@@ -33,6 +33,8 @@ class MemoryRoots(BaseModel):
     memory: str
     personal: str
     state: str = Field(description="The identity's local logs (memory-recall.log), kept out of git.")
+    project: str | None = Field(default=None, description="The project's memory dir, when a key was given.")
+    repo: str | None = Field(default=None, description="The repo's memory dir, when a key was given.")
 
 
 class RecallCall(Strict):
@@ -139,6 +141,9 @@ class FrameCall(Strict):
     agent: str = Field(default="", description="The hook event's agent_id; empty in the main session.")
     opened: list[OpenedLine]
     force: bool = False
+    uncapped: bool = Field(
+        default=False, description="Put every block in, past the hook's size cap; for a caller without that cap."
+    )
 
 
 class Framed(BaseModel):
@@ -167,6 +172,11 @@ class StartCall(Strict):
     source: str = ""
     key: list[str] | None = Field(default=None, min_length=2, max_length=2)
     cli: str = Field(description="The plugin's whaat CLI path, for the open commands of a core over the hooks.")
+    outline: bool = Field(
+        default=False,
+        description="Personal level only: one line per core file (its description and first sentence), nothing logged;"
+        " for a client whose instructions cannot hold the whole core.",
+    )
 
 
 class Started(BaseModel):
@@ -214,13 +224,21 @@ class LintCall(Strict):
     dup_threshold: float = Field(default=0.4, description="Name+description word overlap that marks a duplicate.")
 
 
+DumpVia = Annotated[
+    Literal["cli", "mcp"],
+    Field(description="How the brief tells its agent to read the dir: the CLI command, or the MCP tool call."),
+]
+
+
 class CurationBriefCall(Strict):
     dir: str = Field(description='The memory dir to judge, below the memory root; "" or "." is the global one.')
+    dump: DumpVia = "cli"
 
 
 class CurationRefuteCall(Strict):
     dir: str = Field(description='The memory dir the rows are from; "" or "." is the global one.')
     rows: list[dict[str, Any]] = Field(description="The judge's rows for that dir, as the judge returned them.")
+    dump: DumpVia = "cli"
 
 
 class FidelityCall(Strict):

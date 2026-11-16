@@ -155,8 +155,20 @@ def test_where_names_the_roots_and_an_absolute_path_inside_them_saves(
         "memory": str(root(settings)),
         "personal": str(root(settings) / "personal"),
         "state": str(root(settings).parent / "state"),
+        "project": None,
+        "repo": None,
     }
     assert saved["path"] == PATH
+
+
+def test_where_with_a_key_names_its_project_and_repo_dirs_and_refuses_a_key_that_leaves_the_root(
+    client: TestClient, settings: Settings, trial: dict[str, str]
+) -> None:
+    roots = client.get("/api/v1/memory/where", params={"key": "acme/shop"}, headers=trial).json()
+
+    assert (roots["project"], roots["repo"]) == (str(root(settings) / "acme"), str(root(settings) / "acme" / "shop"))
+    for key in ("../shop", "acme/..", "acme", "acme/shop/x", "/shop"):
+        assert client.get("/api/v1/memory/where", params={"key": key}, headers=trial).status_code == 422, key
 
 
 def test_browse_shows_each_layer_marks_history_and_follows_the_token(
@@ -199,3 +211,35 @@ def test_browse_carries_each_store_memorys_score_and_none_for_a_personal_one(
         "outcomes": {},
     }
     assert cards["personal/user_y.md"]["validity"] is None
+
+
+def test_a_save_warns_of_what_memory_lint_finds_in_the_saved_file_and_still_saves_it(
+    client: TestClient, settings: Settings, trial: dict[str, str]
+) -> None:
+    content = CONTENT.replace("name: feedback_x", "name: feedback-x") + "See /Users/someone/x and [[nowhere]].\n"
+
+    saved = save(client, trial, content=content).json()
+    clean = save(client, trial, path="acme/shop/feedback_y.md", content=CONTENT.replace("feedback_x", "feedback_y"))
+
+    assert (root(settings) / PATH).read_text(encoding="utf-8") == content
+    assert sorted(w.split(":")[0] for w in saved["warnings"]) == [
+        "memory-lint abs-path",
+        "memory-lint broken-link",
+        "memory-lint name",
+    ]
+    assert clean.json()["warnings"] == []
+
+
+def test_a_lint_that_fails_after_the_commit_is_a_warning_not_a_failed_save(
+    client: TestClient, settings: Settings, trial: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken(*args: object, **kwargs: object) -> None:
+        raise OSError("disk went away")
+
+    monkeypatch.setattr("whaat.memory.lint.scan", broken)
+
+    response = save(client, trial)
+
+    assert response.status_code == 201
+    assert response.json()["warnings"] == ["memory-lint did not run: disk went away"]
+    assert (root(settings) / PATH).exists()

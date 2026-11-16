@@ -215,6 +215,7 @@ def frame(
     opened: list[tuple[str, str]],
     force: bool,
     describe: Callable[[str], str] = lambda rel: "",
+    uncapped: bool = False,
 ) -> str | None:
     """memory-frame's PostToolUse note for the `opened: <rel> -> <path>` lines of a recall or load: each memory once
     per agent, headed by what `describe` says of it (its truthness and validity, beyond the live
@@ -245,7 +246,7 @@ def frame(
             continue
         head = describe(rel)
         block = f"Memory: {rel}\n{head + chr(10) if head else ''}\n{text}\n"
-        if sum(map(len, blocks)) + len(block) > FRAME_CAP:
+        if not uncapped and sum(map(len, blocks)) + len(block) > FRAME_CAP:
             left_out.append(rel)
             continue
         blocks.append(block)

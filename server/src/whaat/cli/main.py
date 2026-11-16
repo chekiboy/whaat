@@ -231,6 +231,17 @@ def open_app() -> None:
     typer.echo(url)
 
 
+@app.command("mcp")
+def serve_mcp() -> None:
+    """Serve the skills' calls to an MCP client over stdio, as WHAAT_TOKEN's identity; starts the server if needed."""
+    settings = load_settings()
+    token = _identity_token(settings)
+    typer.echo(_ensure_running(settings), err=True)
+    from whaat.mcp_server import build
+
+    build(settings, token).run("stdio")
+
+
 @app.command()
 def openapi() -> None:
     """Print the API contract (openapi.json)."""

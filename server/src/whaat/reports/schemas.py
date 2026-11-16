@@ -58,3 +58,7 @@ ReportContent = Annotated[
 
 class ReportDetail(ReportSummary):
     body: ReportContent
+
+
+class ReportOpened(BaseModel):
+    url: str = Field(description="The report's address in the UI.")

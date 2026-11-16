@@ -220,6 +220,16 @@
             "description": "The memory dir to judge, below the memory root; \"\" or \".\" is the global one.",
             "title": "Dir",
             "type": "string"
+          },
+          "dump": {
+            "default": "cli",
+            "description": "How the brief tells its agent to read the dir: the CLI command, or the MCP tool call.",
+            "enum": [
+              "cli",
+              "mcp"
+            ],
+            "title": "Dump",
+            "type": "string"
           }
         },
         "required": [
@@ -278,6 +288,16 @@
           "dir": {
             "description": "The memory dir the rows are from; \"\" or \".\" is the global one.",
             "title": "Dir",
+            "type": "string"
+          },
+          "dump": {
+            "default": "cli",
+            "description": "How the brief tells its agent to read the dir: the CLI command, or the MCP tool call.",
+            "enum": [
+              "cli",
+              "mcp"
+            ],
+            "title": "Dump",
             "type": "string"
           },
           "rows": {
@@ -1257,6 +1277,12 @@
           "session": {
             "title": "Session",
             "type": "string"
+          },
+          "uncapped": {
+            "default": false,
+            "description": "Put every block in, past the hook's size cap; for a caller without that cap.",
+            "title": "Uncapped",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2355,6 +2381,30 @@
           "personal": {
             "title": "Personal",
             "type": "string"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The project's memory dir, when a key was given.",
+            "title": "Project"
+          },
+          "repo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The repo's memory dir, when a key was given.",
+            "title": "Repo"
           },
           "state": {
             "description": "The identity's local logs (memory-recall.log), kept out of git.",
@@ -3940,6 +3990,20 @@
         "title": "ReportDetail",
         "type": "object"
       },
+      "ReportOpened": {
+        "properties": {
+          "url": {
+            "description": "The report's address in the UI.",
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "ReportOpened",
+        "type": "object"
+      },
       "ReportSection": {
         "properties": {
           "heading": {
@@ -4831,6 +4895,12 @@
             "title": "Level",
             "type": "string"
           },
+          "outline": {
+            "default": false,
+            "description": "Personal level only: one line per core file (its description and first sentence), nothing logged; for a client whose instructions cannot hold the whole core.",
+            "title": "Outline",
+            "type": "boolean"
+          },
           "part": {
             "minimum": 1.0,
             "title": "Part",
@@ -5345,7 +5415,7 @@
   "info": {
     "summary": "Not just an agent. An agent with a past.",
     "title": "Whaat?!",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -6463,7 +6533,7 @@
     },
     "/api/v1/memory/memories": {
       "post": {
-        "description": "Write the memory and its index line exactly as given, drop the index lines it supersedes, commit those paths.",
+        "description": "Write the memory and its index line exactly as given, drop the index lines it supersedes, commit those paths;\nthe warnings add what memory-lint finds in the saved file.",
         "operationId": "save_memory",
         "requestBody": {
           "content": {
@@ -7650,8 +7720,26 @@
     },
     "/api/v1/memory/where": {
       "get": {
-        "description": "The calling identity's memory root and personal dir, as absolute paths.",
+        "description": "The calling identity's memory root and personal dir, as absolute paths; with key=<project>/<repo>, as the\ncaller resolved it from its git remote, that project's and repo's memory dirs too.",
         "operationId": "memory_where",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -7662,6 +7750,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -7942,6 +8040,54 @@
           }
         ],
         "summary": "Get Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{report_id}/open": {
+      "post": {
+        "description": "Open one of the caller's reports in the UI, in this machine's browser; the address comes back either way.",
+        "operationId": "open_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOpened"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Open Report",
         "tags": [
           "reports"
         ]

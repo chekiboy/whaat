@@ -90,7 +90,7 @@ The pictures show generated sample data.
 
 ## Status
 
-Version 0.2.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code only, and the terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
+Version 0.2.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code through the plugin; an MCP layer serves the same calls over MCP. The terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Requirements
 
@@ -158,6 +158,34 @@ If your project lives inside your home folder, Claude Code can also load `~/.cla
 ```json
 "claudeMdExcludes": ["/Users/<you>/.claude/CLAUDE.md"]
 ```
+
+## MCP layer
+
+`whaat mcp` is an MCP server over stdio. It serves the calls the Claude Code skills make, with the same inputs, and nothing more, as the identity whose token it gets.
+
+1. Create an identity, or use one you have. A new one prints its token once:
+   ```
+   uv run --project /path/to/whaat/server whaat identity add <name>
+   ```
+2. Add it as a stdio server to an MCP configuration:
+   ```json
+   {
+     "mcpServers": {
+       "whaat": {
+         "command": "/path/to/whaat/connectors/claude_code/scripts/whaat",
+         "args": ["mcp"],
+         "env": { "WHAAT_TOKEN": "<the identity's token>" }
+       }
+     }
+   }
+   ```
+   Keep that file readable only by you: the token writes in the identity's name.
+3. Start the client. `whaat mcp` starts the whaat server if it is not running.
+
+What the agent gets:
+- **One identity, chosen by the token.** The admin token is refused.
+- **The identity's core at the start.** The server's instructions carry an outline of the personal core and ask the agent to call `identity_load`, which returns the whole core, before its first reply.
+- **The procedure in words only.** Without the plugin's skills and hooks, nothing enforces recall at the start of a task or the order of a curation run; the instructions and the tool descriptions describe them.
 
 ## How it is built
 

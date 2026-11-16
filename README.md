@@ -36,6 +36,7 @@ These concerns are related, but they are not interchangeable. Session End closes
 - **Curation.** A mechanical check and a report propose merges, moves, trims and fixes; you decide each one on a page, and the agent applies them as commits you can undo.
 - **Migration.** Brings existing memory in: a memory store, a personal folder, Claude Code's own auto-memory and a subagent's notes. Each project's notes go to that project's layer, Claude Code's files are converted to whaat's form on the way, and the sources are only read.
 - **Journal and session reports.** At the end of a session the agent writes what happened and what it learned; whaat keeps it as JSON in the identity's private folder.
+- **Any MCP client.** `whaat mcp` serves the same memory, journal and report calls over MCP, so an agent outside Claude Code can work as an identity too.
 - **Several identities.** Each agent identity has its own folder, git history and token. A token reads and writes only its own identity; the admin token, which the UI uses, sees all of them.
 - **An app to look at it all.** A home page per identity, the memory as a list, a brain and rings, the reports, the curation and migration pages, the settings, and an experimental terminal that runs agent sessions in tmux.
 
@@ -90,7 +91,7 @@ The pictures show generated sample data.
 
 ## Status
 
-Version 0.2.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code through the plugin; an MCP layer serves the same calls over MCP. The terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
+Version 0.3.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. It runs on macOS and connects to Claude Code through the plugin, and to any MCP client through the MCP layer. The terminal is an experiment. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Requirements
 
@@ -98,7 +99,7 @@ Version 0.2.0: early software. Until 1.0, the API, the CLI and the file formats 
 - [uv](https://docs.astral.sh/uv/), which installs the Python (3.11 or newer) the server needs.
 - Node.js and [pnpm](https://pnpm.io/), to build the UI.
 - git; tmux for the terminal.
-- [Claude Code](https://docs.claude.com/en/docs/claude-code), the agent whaat connects to today.
+- [Claude Code](https://docs.claude.com/en/docs/claude-code) for the plugin, or any client that runs MCP servers over stdio for the MCP layer.
 
 ## Getting started
 
@@ -180,22 +181,24 @@ If your project lives inside your home folder, Claude Code can also load `~/.cla
    }
    ```
    Keep that file readable only by you: the token writes in the identity's name.
-3. Start the client. `whaat mcp` starts the whaat server if it is not running.
+3. Start the client. `whaat mcp` starts the whaat server if it is not running. A server that already runs keeps its version: after updating whaat, restart it, or the new calls are refused.
 
 What the agent gets:
-- **One identity, chosen by the token.** The admin token is refused.
+- **One identity, chosen by the token.** The admin token names no identity, so the memory and journal calls refuse it.
 - **The identity's core at the start.** The server's instructions carry an outline of the personal core and ask the agent to call `identity_load`, which returns the whole core, before its first reply.
+- **Its calls logged under the client's session.** When the client passes `CLAUDE_CODE_SESSION_ID` to its MCP servers, as Claude Code does, recall, outcomes and the journal use that session; otherwise each `whaat mcp` process keeps one of its own.
 - **The procedure in words only.** Without the plugin's skills and hooks, nothing enforces recall at the start of a task or the order of a curation run; the instructions and the tool descriptions describe them.
 
 ## How it is built
 
 ```
 UI (browser or app window) ─┐
-Claude Code plugin ─────────┼──> JSON API on 127.0.0.1 ──> services ──> files under git
-whaat CLI ──────────────────┘
+Claude Code plugin ─────────┤
+whaat CLI ──────────────────┼──> JSON API on 127.0.0.1 ──> services ──> files under git
+MCP client ──> whaat mcp ───┘
 ```
 
-- **One way in.** The UI, the plugin and the CLI call the same HTTP API. Anything the UI can do, an agent can do too.
+- **One way in.** The UI, the plugin, the CLI and the MCP layer call the same HTTP API. Anything the UI can do, an agent can do too.
 - **The contract is `openapi.json`.** It is generated from the server's schemas and committed; the UI's typed client is generated from it, so a renamed field breaks the UI build instead of showing wrong data.
 - **One process, one port.** The server also serves the built UI under `/ui`. Node is needed only to build it.
 - **The agent writes, whaat saves.** The plugin's skills tell the agent what to observe and write down; whaat checks it, saves it and commits it.
@@ -203,7 +206,7 @@ whaat CLI ──────────────────┘
 
 ## Repository layout
 
-- `server/`: the Python API and CLI (FastAPI, Typer, uv). Commands and configuration: [`server/README.md`](server/README.md).
+- `server/`: the Python API, the CLI and the MCP layer (FastAPI, Typer, the MCP Python SDK, uv). Commands and configuration: [`server/README.md`](server/README.md).
 - `ui/`: the web UI (React, Vite, TanStack), a client of the API. Development: [`ui/README.md`](ui/README.md).
 - `connectors/claude_code/`: the Claude Code plugin, its skills, hooks and the `whaat` wrapper script.
 - `scripts/`: `whaat-app` opens the app; `macos/build-app` builds a double-clickable `Whaat.app`.

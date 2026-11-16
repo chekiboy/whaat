@@ -10,6 +10,7 @@ uv run whaat serve      # run in the foreground
 uv run whaat ensure     # start in the background unless it already runs
 uv run whaat app        # start if needed and open the UI in an app window
 uv run whaat connect <name>  # connect Claude Code in this folder as <name> (--global: every project)
+uv run whaat mcp        # serve the skills' calls over MCP (stdio), as WHAAT_TOKEN's identity
 uv run whaat openapi    # print the API contract
 uv run whaat --help     # every command: identity, memory, journal, …
 ```

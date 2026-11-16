@@ -2,7 +2,7 @@
 
 What changed in each version of whaat. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0, a new minor version (0.2, 0.3) may change the API, the CLI or the file formats.
 
-## Unreleased
+## 0.3.0 (2026-11-16)
 
 ### Added
 
@@ -15,10 +15,11 @@ What changed in each version of whaat. The format follows [Keep a Changelog](htt
 - **The outcome and read logs** record the time of each line, not only the day.
 - **`memory record`** says that personal memories are not scored when it skips one.
 - **The memory skill** asks to set `confirmed` after fixing what a memory says, since an edit alone does not reset its age.
+- Bumped the project version to 0.3.0.
 
 ### Fixed
 
-- An outcome recorded on the same day as a memory's last change now counts in "since its last change".
+- An outcome recorded on the same day as a memory's last change, after it, now counts in "since its last change" and in memory-lint's misled and noisy lists.
 - An Applied cell can no longer be written on a curation row the user did not decide as apply.
 
 ## 0.2.0 (2026-11-14)

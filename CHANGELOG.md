@@ -2,6 +2,24 @@
 
 What changed in each version of whaat. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0, a new minor version (0.2, 0.3) may change the API, the CLI or the file formats.
 
+## 0.3.1 (2026-11-17)
+
+### Added
+
+- **Paged recall index.** `memory index` (and `memory_index` over MCP) returns the index in parts, each under a client's output limit, with a digest of the whole index. Passing the digest back as `known=` answers an unchanged index in one line. The last part names the parts this session has not read yet, and an agent that has not read every part itself is asked to read it again.
+- **Session start and compaction.** The SessionStart hook puts in the whole personal core and the index parts; a new PreCompact hook logs a compaction, so both are put in again after it.
+- **Recall rule in `CLAUDE.md`.** `whaat connect` puts Whaat's recall rule at the top of the config's `CLAUDE.md`, between `<memory_handling>` tags; connecting again replaces only that block.
+- **An opened memory ends with its own trust and its links:** the index lines and trust of the memories it links to, not their text.
+- **Documentation.** `docs/` explains each module on its own page. The README opens with what Whaat is, then quick facts, security and privacy, our own measurements and an FAQ.
+- **API.** `POST /api/v1/memory/recall/index` takes `known` and `part`, and answers with `digest`, `part`, `parts`, `missing`, `text` and `footer`.
+
+### Changed
+
+- **The recall skill says per trust level what to do:** follow a `certain` memory; follow a `likely` one and name where the code, the docs or another memory says otherwise; ask the user about an `uncertain` one that something contradicts; check a `stale` one against the code first; treat an inferred one as a hypothesis.
+- **Recall before every reply.** The reminder asks for a recall on every user message, not only on a message that starts a task.
+- **The journal, curation and migrate skills** name every branch of a conditional step.
+- Bumped the project version to 0.3.1.
+
 ## 0.3.0 (2026-11-16)
 
 ### Added

@@ -142,12 +142,10 @@ def subagent_core(roots: Roots) -> str:
 
 def personal_start(roots: Roots, source: str, part: int, parts: int, session: str, cli: str) -> str | None:
     """Part `part` of `parts` of the personal core, whole files packed under the cap. Each file put in is logged like
-    a recall open (purpose=load); a compaction is logged first, so memory-frame puts a memory in again."""
+    a recall open (purpose=load)."""
     personal, session = roots.personal, session[:8]
     core = os.path.join(personal, "core")
     names = sorted(n for n in os.listdir(core) if n.endswith(".md")) if os.path.isdir(core) else []
-    if part == 1 and source == "compact":
-        _append(roots, [{"at": _now(), "session": session, "op": "compact"}])
     if part == 1 and names:
         export_subagent_core(roots, core, names)
     if not names:
@@ -229,6 +227,9 @@ def session_start(
     outline: bool = False,
 ) -> dict[str, object]:
     """What one SessionStart hook prints: plain text for an index level, additionalContext for the personal core."""
+    if level == "compact":
+        _append(roots, [{"at": _now(), "session": session[:8], "op": "compact"}])
+        return {"text": None, "additional_context": False}
     if level == "personal" and outline:
         return {"text": personal_outline(roots), "additional_context": False}
     if level == "personal":

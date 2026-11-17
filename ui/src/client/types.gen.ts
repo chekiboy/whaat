@@ -2298,9 +2298,15 @@ export type RecallIndex = {
     /**
      * Known
      *
-     * The digest of the last index the caller still holds in its context, if any.
+     * The digest of an index the caller read every part of and still holds, if any.
      */
     known?: string | null;
+    /**
+     * Part
+     *
+     * Which part of the index to return, from 1.
+     */
+    part?: number;
     /**
      * Repo
      *
@@ -2326,9 +2332,33 @@ export type RecallIndexed = {
     /**
      * Digest
      *
-     * Of the sections; pass it back as `known` while they stay in the context.
+     * Of the whole index; pass it back as `known` while every part stays in the context.
      */
     digest: string;
+    /**
+     * Footer
+     *
+     * memory-recall's last line: the next part, the parts still missing, or the end.
+     */
+    footer: string;
+    /**
+     * Missing
+     *
+     * On the last part: the parts this session has not read since its compaction.
+     */
+    missing?: Array<number>;
+    /**
+     * Part
+     *
+     * The part this answer carries.
+     */
+    part: number;
+    /**
+     * Parts
+     *
+     * How many parts the index has.
+     */
+    parts: number;
     /**
      * Sections
      *
@@ -2339,6 +2369,12 @@ export type RecallIndexed = {
      * Store
      */
     store: string;
+    /**
+     * Text
+     *
+     * The part, or the unchanged line, as memory-recall prints it.
+     */
+    text: string;
     /**
      * Unchanged Since
      *
@@ -2807,6 +2843,56 @@ export type SavedSessionReport = {
 };
 
 /**
+ * Seen
+ */
+export type Seen = {
+    /**
+     * Note
+     *
+     * A line correcting the answer for this agent; None when it holds.
+     */
+    note: string | null;
+};
+
+/**
+ * SeenCall
+ *
+ * A memory-frame PostToolUse call for an index answer a Bash call printed, and the agent that ran it.
+ */
+export type SeenCall = {
+    /**
+     * Agent
+     *
+     * The hook event's agent_id; empty in the main session.
+     */
+    agent?: string;
+    /**
+     * Digest
+     */
+    digest: string;
+    /**
+     * Part
+     *
+     * The part the answer carried; None for an unchanged answer.
+     */
+    part?: number | null;
+    /**
+     * Parts
+     *
+     * How many parts the index has.
+     */
+    parts: number;
+    /**
+     * Session
+     */
+    session: string;
+    /**
+     * Unchanged
+     */
+    unchanged?: boolean;
+};
+
+/**
  * SendDecisions
  */
 export type SendDecisions = {
@@ -2987,7 +3073,8 @@ export type SessionReportContent = {
 /**
  * StartCall
  *
- * One SessionStart hook: which level and part, the hook event's session and source, the repo key from its cwd.
+ * One SessionStart hook, or the PreCompact hook with level `compact`, which only logs the compaction: which level
+ * and part, the hook event's session and source, the repo key from its cwd.
  */
 export type StartCall = {
     /**
@@ -3006,7 +3093,7 @@ export type StartCall = {
     /**
      * Level
      */
-    level: 'global' | 'map' | 'project' | 'repo' | 'personal';
+    level: 'global' | 'map' | 'project' | 'repo' | 'personal' | 'compact';
     /**
      * Outline
      *
@@ -4500,6 +4587,31 @@ export type RecallOpenResponses = {
 };
 
 export type RecallOpenResponse = RecallOpenResponses[keyof RecallOpenResponses];
+
+export type RecallSeenData = {
+    body: SeenCall;
+    path?: never;
+    query?: never;
+    url: '/api/v1/memory/recall/seen';
+};
+
+export type RecallSeenErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RecallSeenError = RecallSeenErrors[keyof RecallSeenErrors];
+
+export type RecallSeenResponses = {
+    /**
+     * Successful Response
+     */
+    200: Seen;
+};
+
+export type RecallSeenResponse = RecallSeenResponses[keyof RecallSeenResponses];
 
 export type RecallStartData = {
     body: StartCall;

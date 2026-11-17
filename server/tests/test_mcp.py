@@ -99,8 +99,11 @@ def test_a_saved_memory_is_indexed_and_every_recall_open_returns_its_text_under_
     )
 
     assert not saved.is_error
-    sections = {s["label"]: s["entries"] for s in json.loads(index.content[0].text)["sections"]}
-    assert sections["repo"] == [{"file": "acme/shop/feedback_x.md", "trigger": "When x"}]
+    listing = index.content[0].text
+    assert "## repo: acme/shop/\n- acme/shop/feedback_x.md — When x\n" in listing
+    assert "Open a memory only through the memory_open tool" in listing
+    assert "whaat memory open" not in listing
+    assert listing.endswith("That was the last part (1 of 1).\n")
     assert first.content[0].text.startswith("Memory: acme/shop/feedback_x.md")
     assert "Do x." in first.content[0].text
     assert again.content[0].text == first.content[0].text

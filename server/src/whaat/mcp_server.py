@@ -23,6 +23,7 @@ from pydantic import Field
 
 from whaat.config import Settings
 from whaat.journal.schemas import CurationApplied
+from whaat.memory.recall import OPEN_LINE
 from whaat.memory.schemas import MigrationSource
 from whaat.platform.repo_key import repo_key
 from whaat.reports.types.journal import JournalBlockIn
@@ -36,9 +37,9 @@ when the core changed. Below is only its outline."""
 INSTRUCTIONS = """whaat keeps this identity's memory, journal and reports in every client and session; a client's own
 memory feature does not reach it, so save here what the identity should keep.
 Recall: before each reply call memory_index (what the message asks for, in a sentence; the repo's path or key; known=
-the digest of the last index you still see, none without one), then memory_open each memory whose trigger matches,
-saying in `because` which words match. memory_dump reads a whole dir, only to curate, review or save; memory_where
-only names the dirs.
+the digest of an index you read every part of and still see, none without one), then memory_open each memory
+whose trigger matches, saying in `because` which words match. memory_dump reads a whole dir, only to curate, review
+or save; memory_where only names the dirs.
 Save: when the work taught something that should outlive the session, above all a user's correction or decision, use
 memory_save (format in its description) and fix what its warnings name.
 Before reporting a task done: memory_reads lists what this session opened; memory_record whether each recall held,
@@ -55,6 +56,10 @@ and memory_lint again.
 Bringing memory in, only when the user asks: memory_migration_plan keeps the sources as a plan the user chooses from on
 its page, then memory_import with that plan."""
 INSTRUCTIONS_BUDGET = 3900
+
+MCP_OPEN_LINE = (
+    "Open a memory only through the memory_open tool, with the file named below and the trigger words that match"
+)
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False)
 WRITES = ToolAnnotations(read_only_hint=False, destructive_hint=False)
@@ -172,16 +177,20 @@ def build(settings: Settings, token: str, environ: Mapping[str, str] = os.enviro
         repo: Annotated[str | None, Field(description="Or the repo's key: <group> or <group>/<repo>.")] = None,
         known: Annotated[
             str | None,
-            Field(description="The digest of the last index you still see in your context; leave it out with none."),
+            Field(description="The digest of an index you read every part of and still see; leave it out with none."),
         ] = None,
-    ) -> Any:
+        part: Annotated[
+            int, Field(ge=1, description="Which part of the index, from 1; read each until part == parts.")
+        ] = 1,
+    ) -> str:
         """The memory indexes that apply: global, the repo's project and repo layer, and personal; each line a memory
         and its trigger, the situation in which to open it. Outside a git repo only global and personal come back: name
-        the repo with repo= to see its layers. Personal memories are listed as personal:<file>. An answer with
-        sections null means the index with that digest is unchanged: open from the copy in your context."""
+        the repo with repo= to see its layers. Personal memories are listed as personal:<file>. The index comes in
+        parts; the last line of each answer says which part to ask for next, which parts are still missing, or that it
+        was the last; an unchanged answer is one line."""
         path = path or (None if repo else project_dir)
         key = None if repo else _key_of(path)
-        return api.call(
+        found = api.call(
             "POST",
             "/memory/recall/index",
             {
@@ -191,8 +200,11 @@ def build(settings: Settings, token: str, environ: Mapping[str, str] = os.enviro
                 "repo": repo,
                 "key": key.split("/") if key else None,
                 "known": known,
+                "part": part,
             },
         )
+        text = str(found["text"]).replace(OPEN_LINE, MCP_OPEN_LINE) + str(found["footer"])
+        return text.replace("run index again", "call memory_index again")
 
     @mcp.tool(annotations=READ_ONLY)
     def memory_open(

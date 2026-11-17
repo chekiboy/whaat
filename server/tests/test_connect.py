@@ -13,7 +13,16 @@ from whaat.config import Settings
 from whaat.git import GitCommitter
 from whaat.identities.registry import IdentityRegistry
 from whaat.security import load_or_create_token
-from whaat.terminal.agent import CONNECTOR, add_connector, with_connector
+from whaat.terminal.agent import (
+    CONNECTOR,
+    RECALL_RULE,
+    ClaudeMdUnusableError,
+    add_connector,
+    add_recall_rule,
+    check_claude_md,
+    launch_for,
+    with_connector,
+)
 
 
 def test_the_connector_joins_the_other_plugin_folders_once_and_last() -> None:
@@ -88,7 +97,25 @@ def test_a_project_holds_the_identity_and_the_user_settings_the_plugin(connectin
     assert result.exit_code == 0, result.output
     assert set(json.loads(project_file.read_text())["env"]) == {"WHAAT_TOKEN", "WHAAT_INSTANCE", "WHAAT_PORT"}
     assert json.loads(user_file.read_text())["env"] == {"CLAUDE_CODE_PLUGIN_DIRS": str(CONNECTOR)}
+    assert (user_file.parent / "CLAUDE.md").read_text() == RECALL_RULE
     assert "the-token" not in result.output
+
+
+def test_the_recall_rule_heads_a_users_claude_md_once_and_keeps_the_rest(tmp_path: Path) -> None:
+    claude_md = tmp_path / "CLAUDE.md"
+    claude_md.write_text("# Mine\nKeep this.\n")
+    add_recall_rule(claude_md)
+    once = claude_md.read_text()
+    claude_md.write_text("# Mine\n" + once.replace("Before every reply", "An older rule").replace("# Mine\n", "", 1))
+    add_recall_rule(claude_md)
+    add_recall_rule(claude_md)
+
+    assert once.startswith("<memory_handling>\n")
+    assert once == RECALL_RULE + "\n# Mine\nKeep this.\n"
+    assert claude_md.read_text().count("<memory_handling>") == 1
+    assert claude_md.read_text().startswith(RECALL_RULE)
+    assert "An older rule" not in claude_md.read_text()
+    assert "# Mine\n" in claude_md.read_text() and "Keep this.\n" in claude_md.read_text()
 
 
 def test_a_settings_file_that_is_not_json_is_left_as_it_is(connecting: tuple[Path, Path]) -> None:
@@ -100,3 +127,65 @@ def test_a_settings_file_that_is_not_json_is_left_as_it_is(connecting: tuple[Pat
     assert result.exit_code == 1
     assert user_file.read_text() == '{"hooks": {},}'
     assert not project_file.exists()
+
+
+def test_a_users_own_memory_handling_block_stays(tmp_path: Path) -> None:
+    claude_md = tmp_path / "CLAUDE.md"
+    claude_md.write_text("<memory_handling>\nMy own rule: never store secrets.\n</memory_handling>\n")
+
+    add_recall_rule(claude_md)
+    add_recall_rule(claude_md)
+
+    text = claude_md.read_text()
+    assert text.startswith(RECALL_RULE)
+    assert text.count("whaat:memory-recall") == 1
+    assert "My own rule: never store secrets." in text
+
+
+def test_a_claude_md_that_is_not_utf8_stops_connect_before_any_write(connecting: tuple[Path, Path]) -> None:
+    project_file, user_file = connecting
+    (user_file.parent / "CLAUDE.md").write_bytes(b"\xff\xfe not utf-8")
+
+    result = CliRunner().invoke(cli.app, ["connect", "agent"])
+
+    assert result.exit_code == 1
+    assert "cannot be read as UTF-8 text" in result.output
+    assert not project_file.exists()
+    assert not user_file.exists()
+
+
+def test_a_claude_md_linked_into_a_folder_that_cannot_be_written_is_refused(tmp_path: Path) -> None:
+    locked = tmp_path / "locked"
+    locked.mkdir()
+    (locked / "CLAUDE.md").write_text("# Mine\n")
+    link = tmp_path / "CLAUDE.md"
+    link.symlink_to(locked / "CLAUDE.md")
+    locked.chmod(0o555)
+    try:
+        with pytest.raises(ClaudeMdUnusableError, match="its folder is not writable"):
+            check_claude_md(link)
+    finally:
+        locked.chmod(0o755)
+
+
+def test_a_terminal_start_skips_a_claude_md_it_cannot_write(tmp_path: Path, settings: Settings) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "CLAUDE.md").write_bytes(b"\xff not utf-8")
+
+    launch = launch_for("agent", str(config), "claude", settings, lambda identity: "the-token")
+
+    assert launch is not None
+    assert (config / "CLAUDE.md").read_bytes() == b"\xff not utf-8"
+    assert (config / "settings.json").exists()
+
+
+def test_a_read_only_claude_md_in_a_writable_folder_is_refused(tmp_path: Path) -> None:
+    claude_md = tmp_path / "CLAUDE.md"
+    claude_md.write_text("# Mine\n")
+    claude_md.chmod(0o444)
+    try:
+        with pytest.raises(ClaudeMdUnusableError, match="is not writable"):
+            check_claude_md(claude_md)
+    finally:
+        claude_md.chmod(0o644)

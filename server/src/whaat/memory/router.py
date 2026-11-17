@@ -59,6 +59,8 @@ from whaat.memory.schemas import (
     RevertCall,
     Reverted,
     SavedMemory,
+    Seen,
+    SeenCall,
     StartCall,
     Started,
     SubagentCore,
@@ -138,7 +140,9 @@ def _refused(err: recall.RecallError) -> HTTPException:
 def recall_index(call: RecallIndex, service: MemoryServiceDep, identity: IdentityDep) -> dict[str, object]:
     """memory-recall index: the triggers that apply, one memory-recall.log line with the task."""
     try:
-        return recall.index(service.roots(identity), call.session, call.task, call.cwd, call.repo, call.key, call.known)
+        return recall.index(
+            service.roots(identity), call.session, call.task, call.cwd, call.repo, call.key, call.known, call.part
+        )
     except recall.RecallError as err:
         raise _refused(err) from err
 
@@ -159,6 +163,14 @@ def recall_dump(call: RecallDump, service: MemoryServiceDep, identity: IdentityD
         return recall.dump(service.roots(identity), call.session, call.dir, call.because, call.purpose)
     except recall.RecallError as err:
         raise _refused(err) from err
+
+
+@router.post("/recall/seen", response_model=Seen)
+def recall_seen(call: SeenCall, service: MemoryServiceDep, identity: IdentityDep) -> Seen:
+    """memory-frame: an index answer checked against the parts this agent itself read."""
+    roots = service.roots(identity)
+    note = recall.record_seen(roots, call.session, call.agent, call.digest, call.part, call.parts, call.unchanged)
+    return Seen(note=note)
 
 
 @router.post("/recall/frame", response_model=Framed)

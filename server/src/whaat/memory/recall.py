@@ -11,6 +11,7 @@ import os
 import re
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 PURPOSES = ("recall", "save", "curate", "review", "load")
 DUMP_PURPOSES = ("save", "curate", "review")
@@ -18,6 +19,7 @@ PERSONAL = "personal:"
 LOG_NAME = "memory-recall.log"
 MEMORY_MAP = "memory-map.md"
 DIR_MODE = 0o700
+PART_BUDGET = 8000
 
 
 class RecallError(ValueError):
@@ -86,11 +88,13 @@ def index(
     repo: str | None,
     key: list[str] | None,
     known: str | None = None,
+    part: int = 1,
 ) -> dict[str, object]:
     """The global, project, repo and personal indexes; key is the (project, repo) the caller resolved from cwd.
 
-    Each answer carries the digest of its sections. When `known` is that digest and this session got the same index
-    since its last compaction, the sections are left out: the caller still holds them."""
+    The index comes in parts of about PART_BUDGET characters, so a tool result never outgrows what a client shows in
+    full; each answer carries one part and the digest of the whole index. When `known` is that digest and this session
+    got every part of it since its last compaction, the sections are left out: the caller still holds them."""
     task = task.strip()
     if len(task) < 10:
         raise RecallError('memory-recall index: task="<what you are doing>" is required: the log ties each open to it')
@@ -131,25 +135,202 @@ def index(
                     entries.append({"file": prefix + m.group(1), "trigger": trigger})
         sections.append({"label": label, "prefix": prefix, "entries": entries})
     digest = hashlib.sha256(json.dumps(sections, sort_keys=True).encode("utf-8")).hexdigest()[:12]
-    since = given_since(roots, session, digest) if known == digest else None
-    log(roots, session, {"op": "index", "task": task, "cwd": cwd, "repo": repo, "digest": digest})
+    pages = in_parts(sections)
+    if not 1 <= part <= len(pages):
+        raise RecallError(f"memory-recall index: part={part} is out of range; this index has {len(pages)} part(s)")
+    every = set(range(1, len(pages) + 1))
+    got, first = parts_given(roots, session, digest, len(pages))
+    since = first if known == digest and got >= every else None
+    event = {"op": "index", "task": task, "cwd": cwd, "repo": repo, "digest": digest}
+    log(roots, session, {**event, "part": part, "parts": len(pages), "unchanged": bool(since)})
+    answer = {"store": store, "digest": digest, "part": part, "parts": len(pages)}
     if since:
-        return {"store": store, "digest": digest, "sections": None, "unchanged_since": since}
-    return {"store": store, "digest": digest, "sections": sections, "unchanged_since": None}
+        text = (
+            f"index {digest} unchanged since {since[11:16]} ({len(pages)} parts): it is above in your context, open"
+            " from it. If it is no longer there, run index again without known=.\n"
+        )
+        return {**answer, "sections": None, "unchanged_since": since, "missing": [], "text": text, "footer": ""}
+    missing = sorted(every - got - {part}) if part == len(pages) else []
+    text = part_text(store, digest, part, len(pages), pages[part - 1])
+    footer = index_footer(part, len(pages), missing)
+    return {
+        **answer,
+        "sections": pages[part - 1],
+        "unchanged_since": None,
+        "missing": missing,
+        "text": text,
+        "footer": footer,
+    }
 
 
-def given_since(roots: Roots, session: str, digest: str) -> str | None:
-    """When this session first got the index with this digest since its last compaction, else None."""
+OPEN_LINE = 'Open a memory only through: whaat memory open file=<path below> because="<trigger words that match>"'
+
+
+def part_text(store: str, digest: str, part: int, parts: int, sections: list[dict[str, Any]]) -> str:
+    lines = [
+        f"store {store}",
+        f"index {digest} part {part}/{parts} (once you have read every part, pass known={digest} next time)",
+        OPEN_LINE,
+        "",
+    ]
+    for section in sections:
+        lines.append(f"## {section['label']}: {section['prefix'] or '(store root)'}")
+        if section["entries"] is None:
+            lines.append("(no index)")
+        else:
+            lines += [f"- {entry['file']} — {entry['trigger']}" for entry in section["entries"]]
+        lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+def index_footer(part: int, parts: int, missing: list[int]) -> str:
+    if part < parts:
+        return f"Part {part} of {parts}: run index again with part={part + 1} for the next part.\n"
+    if missing:
+        gaps = ", ".join(str(n) for n in missing)
+        return (
+            f"Not complete yet: this session has not read part {gaps}. Run index again with part={missing[0]},"
+            " then each other part named here.\n"
+        )
+    return f"That was the last part ({parts} of {parts}).\n"
+
+
+def in_parts(sections: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    """The sections split into parts of about PART_BUDGET characters of index lines; a long section continues in the
+    next part under the same label."""
+    parts: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    size = 0
+    for section in sections:
+        entries = section["entries"]
+        head = {**section, "entries": None if entries is None else []}
+        current.append(head)
+        header = len(str(section["label"])) + len(str(section["prefix"])) + 8
+        size += header
+        for entry in entries if isinstance(entries, list) else []:
+            line = len(entry["file"]) + len(entry["trigger"]) + 5
+            held = head["entries"]
+            if size + line > PART_BUDGET and (held or len(current) > 1):
+                if not held:
+                    current.pop()
+                parts.append(current)
+                head = {**section, "entries": []}
+                current = [head]
+                size = header
+            head["entries"].append(entry)
+            size += line
+    parts.append(current)
+    return parts
+
+
+def record_seen(
+    roots: Roots, session: str, agent: str, digest: str, part: int | None, parts: int, unchanged: bool
+) -> str | None:
+    """memory-frame's check of an index answer against what this agent itself read, since the CLI counts parts per
+    session and a subagent runs under its main agent's session: the part logged for this agent, and a correcting
+    line where the answer counted parts it did not read."""
+    session = session[:8]
+    if not unchanged and part is not None:
+        log(roots, session, {"op": "seen", "agent": agent, "digest": digest, "part": part, "parts": parts})
+    events = _events(roots)
+    mine = parts_seen(events, session, agent, digest)
+    every = set(range(1, parts + 1))
+    if unchanged and not mine >= every:
+        return (
+            f"[memory] this agent has not read every part of index {digest} itself (it shares its session with"
+            " other agents): run index again without known=."
+        )
+    if not unchanged and part == parts:
+        missing = sorted(every - mine)
+        if missing and missing != sorted(every - parts_given(roots, session, digest, parts, events)[0]):
+            gaps = ", ".join(str(n) for n in missing)
+            return (
+                f"[memory] this agent has not read part {gaps} of index {digest} itself: run index again with"
+                f" part={missing[0]}, then each other part named here."
+            )
+    return None
+
+
+def parts_seen(events: list[dict[str, object]], session: str, agent: str, digest: str) -> set[int]:
+    """The parts of the index with this digest that this agent got, as memory-frame logged them, since this agent's
+    last compaction; only the main agent has one."""
+    got: set[int] = set()
+    for event in events:
+        if event.get("session") != session:
+            continue
+        if event.get("op") == "compact" and not agent:
+            got = set()
+        elif (
+            event.get("op") == "seen"
+            and (event.get("agent") or "") == agent
+            and event.get("digest") == digest
+            and isinstance(seen_part := event.get("part"), int)
+        ):
+            got.add(seen_part)
+    return got
+
+
+LINK = re.compile(r"\[\[([\w.-]+)\]\]")
+
+
+def memory_names(roots: Roots) -> dict[str, str]:
+    """Each memory's name (its file name without .md) and its path as index names it, personal ones as personal:…."""
+    names: dict[str, str] = {}
+    for root, prefix in ((roots.store, ""), (roots.personal, PERSONAL)):
+        for directory, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if not d.startswith(".") and roots.inside(root, os.path.join(directory, d))]
+            for name in files:
+                if name.endswith(".md") and name not in ("MEMORY.md", MEMORY_MAP):
+                    rel = os.path.relpath(os.path.join(directory, name), root)
+                    names.setdefault(name[:-3], prefix + rel)
+    return names
+
+
+def trust_and_links(
+    roots: Roots, names: Callable[[], dict[str, str]], rel: str, text: str, head: str, describe: Callable[[str], str]
+) -> list[str]:
+    """This memory's own trust, then the memories it links to, each by its index line and how far it can be trusted,
+    not by its text, so they can be weighed side by side."""
+    own = os.path.basename(rel)[:-3]
+    wanted = [name for name in dict.fromkeys(LINK.findall(text)) if name != own]
+    if not wanted:
+        return []
+    lines = []
+    for name in wanted:
+        found = names().get(name)
+        if found is None:
+            lines.append(f"- [[{name}]]: no memory of that name")
+            continue
+        root, inner, _ = roots.root_of(found)
+        line = index_line(root, inner)
+        trigger = line.split("—", 1)[-1].strip() if line and "—" in line else "(no index line)"
+        trust = " · ".join(part for part in describe(found).splitlines() if part)
+        lines.append(f"- {found} — {trigger}\n  {trust}" if trust else f"- {found} — {trigger}")
+    own_trust = " · ".join(part for part in head.splitlines() if part)
+    intro = (
+        "Related, by its links (index lines and trust only, not their text; open one with `whaat memory open` when"
+        " its trigger fits the task):"
+    )
+    return ([f"This memory: {own_trust}"] if own_trust else []) + [intro, *lines]
+
+
+def parts_given(
+    roots: Roots, session: str, digest: str, parts: int, events: list[dict[str, object]] | None = None
+) -> tuple[set[int], str | None]:
+    """The parts of the index with this digest this session got since its last compaction, and when it got the
+    first of them. A logged index line without a part counts as the whole index."""
+    got: set[int] = set()
     since = None
-    for event in _events(roots):
+    for event in _events(roots) if events is None else events:
         if event.get("session") != session[:8]:
             continue
         if event.get("op") == "compact":
-            since = None
-        elif event.get("op") == "index" and event.get("digest") == digest and since is None:
+            got, since = set(), None
+        elif event.get("op") == "index" and event.get("digest") == digest and not event.get("unchanged"):
+            got |= {given} if isinstance(given := event.get("part"), int) else set(range(1, parts + 1))
             at = event.get("at")
-            since = at if isinstance(at, str) else None
-    return since
+            since = since or (at if isinstance(at, str) else None)
+    return got, since
 
 
 def open_memory(roots: Roots, session: str, file: str, because: str, purpose: str | None) -> dict[str, object]:
@@ -236,6 +417,20 @@ def already_in(roots: Roots, session: str, agent: str, rel: str) -> str | None:
     return at if isinstance(at, str) else None
 
 
+def with_room(lines: list[str], room: int | None) -> str:
+    """The lines that fit into room characters, in order, and a line naming how many did not."""
+    out, used = "", 0
+    for n, line in enumerate(lines):
+        rest = len(lines) - n
+        tail = f"({rest} related line(s) left out: over the size limit)\n"
+        fits = used + len(line) + 1 <= (room if rest == 1 else room - len(tail)) if room is not None else True
+        if not fits:
+            return out + tail
+        out += line + "\n"
+        used += len(line) + 1
+    return out
+
+
 def frame(
     roots: Roots,
     session: str,
@@ -259,6 +454,13 @@ def frame(
     blocks: list[str] = []
     left_out: list[str] = []
     put_in: list[str] = []
+    known_names: dict[str, str] = {}
+
+    def names() -> dict[str, str]:
+        if not known_names:
+            known_names.update(memory_names(roots))
+        return known_names
+
     for rel, path in hits:
         at = None if force else already_in(roots, session, agent, rel)
         if at:
@@ -274,9 +476,12 @@ def frame(
             continue
         head = describe(rel)
         block = f"Memory: {rel}\n{head + chr(10) if head else ''}\n{text}\n"
-        if not uncapped and sum(map(len, blocks)) + len(block) > FRAME_CAP:
+        room = FRAME_CAP - sum(map(len, blocks)) - len(block)
+        if not uncapped and room < 0:
             left_out.append(rel)
             continue
+        links = trust_and_links(roots, names, rel, text, head, describe)
+        block += with_room(links, None if uncapped else room)
         blocks.append(block)
         put_in.append(rel)
     if put_in:

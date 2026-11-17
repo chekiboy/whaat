@@ -75,7 +75,44 @@ def test_index_lists_each_layer_with_its_prefix_and_logs_the_task(
         "cwd": "/x/shop",
         "repo": None,
         "digest": found["digest"],
+        "part": 1,
+        "parts": 1,
+        "unchanged": False,
     }
+    assert (found["part"], found["parts"]) == (1, 1)
+
+
+def test_a_long_index_comes_in_parts_and_counts_as_known_only_once_every_part_was_read(
+    client: TestClient, settings: Settings, trial: dict[str, str], memory: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from whaat.memory import recall
+
+    write(memory / "MEMORY.md", "".join(f"- feedback_g{n}.md — When g{n} happens\n" for n in range(6)))
+    monkeypatch.setattr(recall, "PART_BUDGET", 80)
+    first = call(client, trial, "index", task="review the shop", cwd="/x").json()
+    digest, parts = first["digest"], first["parts"]
+    early = call(client, trial, "index", task="review the shop", cwd="/x", known=digest).json()
+    skipped = call(client, trial, "index", task="review the shop", cwd="/x", part=parts).json()
+    rest = [call(client, trial, "index", task="review the shop", cwd="/x", part=n).json() for n in range(2, parts + 1)]
+    known = call(client, trial, "index", task="review the shop", cwd="/x", known=digest, part=2).json()
+    beyond = call(client, trial, "index", task="review the shop", cwd="/x", part=parts + 1)
+
+    files = [e["file"] for page in [first, *rest] for s in page["sections"] if s["entries"] for e in s["entries"]]
+    assert parts > 2
+    assert {page["digest"] for page in [first, *rest]} == {digest}
+    assert files == [f"feedback_g{n}.md" for n in range(6)] + ["personal:core/claude_self.md", "personal:user_x.md"]
+    assert early["sections"] is not None
+    assert first["text"].startswith(f"store {memory.resolve()}\nindex {digest} part 1/{parts} ")
+    assert "Open a memory only through: whaat memory open" in first["text"]
+    assert first["footer"] == f"Part 1 of {parts}: run index again with part=2 for the next part.\n"
+    assert skipped["footer"].startswith("Not complete yet: this session has not read part 2,")
+    assert rest[-1]["footer"] == f"That was the last part ({parts} of {parts}).\n"
+    assert f"index {digest} unchanged since " in known["text"] and f"({parts} parts)" in known["text"]
+    assert skipped["missing"] == list(range(2, parts))
+    assert rest[-1]["missing"] == []
+    assert known["sections"] is None
+    assert beyond.status_code == 422
+    assert "out of range" in beyond.json()["detail"]
 
 
 def test_a_known_index_comes_back_as_unchanged_only_in_the_session_that_got_it_and_until_a_compaction(
@@ -259,3 +296,85 @@ def test_guard_names_the_first_memory_not_opened_this_session(
     call(client, trial, "dump", dir=".", because="weekly curation", purpose="curate")
     assert guard(client, trial, personal, memory / "feedback_g.md", memory / "MEMORY.md") is None
     assert guard(client, trial, memory / "acme/shop/feedback_r.md") == "acme/shop/feedback_r.md"
+
+
+def test_an_opened_memory_lists_the_memories_it_links_to_by_index_line_and_trust_only(
+    client: TestClient, trial: dict[str, str], memory: Path
+) -> None:
+    write(memory / "feedback_g.md", "G.\nRelated: [[feedback_r]], [[user_x]], [[feedback_gone]], [[feedback_g]].\n")
+
+    context = frame(client, trial, memory, "feedback_g.md").json()["context"]
+    assert "Related, by its links" in context
+    before, links = context.split("Related, by its links", 1)
+
+    assert before.splitlines()[-1].startswith("This memory: Truthness:")
+
+    assert "- acme/shop/feedback_r.md — When r\n  Truthness:" in links
+    assert "- personal:user_x.md — When x\n  Truthness: source unset · Validity: not scored (personal memory)" in links
+    assert "- [[feedback_gone]]: no memory of that name" in links
+    assert "feedback_g.md —" not in links
+    assert "R." not in links and "X." not in links
+
+
+def test_a_long_memory_with_many_links_is_put_in_and_its_links_give_way(
+    client: TestClient, trial: dict[str, str], memory: Path
+) -> None:
+    for n in range(8):
+        write(memory / f"feedback_l{n}.md", f"L{n}.\n")
+    links = ", ".join(f"[[feedback_l{n}]]" for n in range(8))
+    write(memory / "feedback_g.md", "G" * 8_700 + f"\nRelated: {links}.\n")
+
+    context = frame(client, trial, memory, "feedback_g.md").json()["context"]
+
+    assert context.startswith("Memory: feedback_g.md")
+    assert "not put in" not in context
+    assert "related line(s) left out: over the size limit" in context
+    assert len(context) <= 9_500 + 100
+
+
+def test_an_index_answer_is_corrected_for_an_agent_that_did_not_read_the_parts_itself(
+    client: TestClient, trial: dict[str, str], memory: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from whaat.memory import recall
+
+    write(memory / "MEMORY.md", "".join(f"- feedback_g{n}.md — When g{n} happens\n" for n in range(6)))
+    monkeypatch.setattr(recall, "PART_BUDGET", 80)
+
+    def index(session: str, **body: Any) -> Any:
+        payload = {"session": session, "task": "review the shop", "cwd": "/x", **body}
+        return client.post("/api/v1/memory/recall/index", json=payload, headers=trial).json()
+
+    def seen(session: str, agent: str, **body: Any) -> Any:
+        payload = {"session": session, "agent": agent, **body}
+        return client.post("/api/v1/memory/recall/seen", json=payload, headers=trial).json()["note"]
+
+    first = index("abcd1234")
+    digest, parts = first["digest"], first["parts"]
+    for n in range(1, parts + 1):
+        index("abcd1234", part=n)
+        assert seen("abcd1234", "", digest=digest, part=n, parts=parts) is None
+    index("abcd1234", part=1)
+    assert seen("abcd1234", "sub1", digest=digest, part=1, parts=parts) is None
+
+    told_unchanged = index("abcd1234", known=digest)
+    unchanged = seen("abcd1234", "sub1", digest=digest, unchanged=True, parts=parts)
+    told_complete = index("abcd1234", part=parts)
+    jumped = seen("abcd1234", "sub1", digest=digest, part=parts, parts=parts)
+    main = seen("abcd1234", "", digest=digest, unchanged=True, parts=parts)
+    index("ffff0000", part=1)
+    assert seen("ffff0000", "", digest=digest, part=1, parts=parts) is None
+    alone = index("ffff0000", part=parts)
+    named = seen("ffff0000", "", digest=digest, part=parts, parts=parts)
+    beyond = client.post(
+        "/api/v1/memory/recall/seen",
+        json={"session": "abcd1234", "digest": digest, "part": 1, "parts": 1_000_000},
+        headers=trial,
+    )
+
+    assert parts > 2
+    assert told_unchanged["sections"] is None and told_complete["missing"] == []
+    assert unchanged is not None and "has not read every part" in unchanged
+    assert jumped is not None and f"has not read part {', '.join(str(n) for n in range(2, parts))} of index" in jumped
+    assert main is None
+    assert alone["missing"] == list(range(2, parts)) and named is None
+    assert beyond.status_code == 422

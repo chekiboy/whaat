@@ -90,9 +90,11 @@ def test_the_core_with_its_every_agent_files_is_put_in_logged_as_loaded_and_expo
     write(core / "claude_self.md", "Self.\n")
     write(core / "watch_list.md", EVERY_AGENT)
 
+    compacted = start(client, trial, "compact", 1, 1)
     first = start(client, trial, "personal", 1, 2, source="compact")
     second = start(client, trial, "personal", 2, 2)
 
+    assert compacted["text"] is None
     assert first["additional_context"] is True
     assert first["text"] == (
         f"[memory] personal dir {(folder / 'memory/personal').resolve()}\nThe context was just compacted; your core,"

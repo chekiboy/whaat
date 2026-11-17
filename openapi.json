@@ -3695,8 +3695,15 @@
                 "type": "null"
               }
             ],
-            "description": "The digest of the last index the caller still holds in its context, if any.",
+            "description": "The digest of an index the caller read every part of and still holds, if any.",
             "title": "Known"
+          },
+          "part": {
+            "default": 1,
+            "description": "Which part of the index to return, from 1.",
+            "minimum": 1.0,
+            "title": "Part",
+            "type": "integer"
           },
           "repo": {
             "anyOf": [
@@ -3731,9 +3738,32 @@
       "RecallIndexed": {
         "properties": {
           "digest": {
-            "description": "Of the sections; pass it back as `known` while they stay in the context.",
+            "description": "Of the whole index; pass it back as `known` while every part stays in the context.",
             "title": "Digest",
             "type": "string"
+          },
+          "footer": {
+            "description": "memory-recall's last line: the next part, the parts still missing, or the end.",
+            "title": "Footer",
+            "type": "string"
+          },
+          "missing": {
+            "description": "On the last part: the parts this session has not read since its compaction.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "part": {
+            "description": "The part this answer carries.",
+            "title": "Part",
+            "type": "integer"
+          },
+          "parts": {
+            "description": "How many parts the index has.",
+            "title": "Parts",
+            "type": "integer"
           },
           "sections": {
             "anyOf": [
@@ -3754,6 +3784,11 @@
             "title": "Store",
             "type": "string"
           },
+          "text": {
+            "description": "The part, or the unchanged line, as memory-recall prints it.",
+            "title": "Text",
+            "type": "string"
+          },
           "unchanged_since": {
             "anyOf": [
               {
@@ -3770,8 +3805,12 @@
         "required": [
           "store",
           "digest",
+          "part",
+          "parts",
           "sections",
-          "unchanged_since"
+          "unchanged_since",
+          "text",
+          "footer"
         ],
         "title": "RecallIndexed",
         "type": "object"
@@ -4516,6 +4555,80 @@
         "title": "SavedSessionReport",
         "type": "object"
       },
+      "Seen": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A line correcting the answer for this agent; None when it holds.",
+            "title": "Note"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "Seen",
+        "type": "object"
+      },
+      "SeenCall": {
+        "additionalProperties": false,
+        "description": "A memory-frame PostToolUse call for an index answer a Bash call printed, and the agent that ran it.",
+        "properties": {
+          "agent": {
+            "default": "",
+            "description": "The hook event's agent_id; empty in the main session.",
+            "title": "Agent",
+            "type": "string"
+          },
+          "digest": {
+            "title": "Digest",
+            "type": "string"
+          },
+          "part": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The part the answer carried; None for an unchanged answer.",
+            "title": "Part"
+          },
+          "parts": {
+            "description": "How many parts the index has.",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Parts",
+            "type": "integer"
+          },
+          "session": {
+            "title": "Session",
+            "type": "string"
+          },
+          "unchanged": {
+            "default": false,
+            "title": "Unchanged",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "session",
+          "digest",
+          "parts"
+        ],
+        "title": "SeenCall",
+        "type": "object"
+      },
       "SendDecisions": {
         "additionalProperties": false,
         "properties": {
@@ -4900,7 +5013,7 @@
       },
       "StartCall": {
         "additionalProperties": false,
-        "description": "One SessionStart hook: which level and part, the hook event's session and source, the repo key from its cwd.",
+        "description": "One SessionStart hook, or the PreCompact hook with level `compact`, which only logs the compaction: which level\nand part, the hook event's session and source, the repo key from its cwd.",
         "properties": {
           "cli": {
             "description": "The plugin's whaat CLI path, for the open commands of a core over the hooks.",
@@ -4929,7 +5042,8 @@
               "map",
               "project",
               "repo",
-              "personal"
+              "personal",
+              "compact"
             ],
             "title": "Level",
             "type": "string"
@@ -7478,6 +7592,53 @@
           }
         ],
         "summary": "Recall Open",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/api/v1/memory/recall/seen": {
+      "post": {
+        "description": "memory-frame: an index answer checked against the parts this agent itself read.",
+        "operationId": "recall_seen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SeenCall"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Seen"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recall Seen",
         "tags": [
           "memory"
         ]

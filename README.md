@@ -109,6 +109,7 @@ The agent itself records whether a recalled memory held, was irrelevant or misle
 | Measure | Result | How |
 |---|---|---|
 | Trust warnings | Named a stale memory's age: 100% with the trust lines, 0% without. With a weakly backed memory, based the decision on evidence in the repository: 80% with, 0% without; without the lines it followed the memory as a rule every time | Headless agent runs on fresh copies, the current build against one without the trust lines; 5 runs per case and build |
+| Contradicting evidence | A likely memory (validity 0.6): followed, with the contradiction named, 100%. An uncertain memory (0.5): put to the user as a question, 100% | Headless agent runs on fresh copies with the current recall rule; the code contradicted the memory; 5 runs per level |
 | Parallel saves | 112 of 112 committed, no warning, clean repository | 28 memory and journal saves sent to one identity at the same moment, four rounds |
 | Recall index | about 4 ms | Server side, on our store of 593 memories (2.6 MB) |
 | Memory graph | about 120 ms | Same store |

@@ -389,7 +389,7 @@ def record(roots: Roots, session: str, outcome: str, paths: list[str]) -> str:
 def quality(roots: Roots, file: str) -> str:
     """Truthness and validity of a memory as `index` names it, for the note that brings it back: what backs it and how
     its recalls went since its last change, then its level, score and age (or history), and, when one of them is weak,
-    a `⚠` line that names the state of that knowledge, not what to do: the skill leaves that to the situation. A
+    a `⚠` line that names the state of that knowledge, not what to do: the recall skill says what each level asks for. A
     personal memory is not scored; its truthness comes from its frontmatter alone."""
     if file.startswith("personal:"):
         fm, _ = parse(os.path.join(roots.personal, file[len("personal:") :]))

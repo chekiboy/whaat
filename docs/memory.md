@@ -48,14 +48,14 @@ A recalled memory arrives with two lines that tell the agent how much to rely on
 
 **Validity** is a score that fades with age. It starts from the source (1.0 for measured or user-decided, 0.75 for an inference, 0.9 when none is given) and loses 0.2 every 120 days. The clock restarts whenever the memory is confirmed or holds in use. The score gives a level:
 
-| Level | Score | What it means |
+| Level | Score | What the agent does |
 |---|---|---|
-| certain | 0.8 and above | Reliable |
-| likely | 0.6 to 0.8 | Probably right; the home page lists it as getting old |
-| uncertain | 0.4 to 0.6 | May no longer hold; the home page lists it to check |
-| stale | below 0.4 | May be wrong; curation asks whether it still holds |
+| certain | 0.8 and above | Follows it |
+| likely | 0.6 to 0.8 | Follows it; where the code, the docs or another memory says otherwise, it names the difference. The home page lists it as getting old |
+| uncertain | 0.4 to 0.6 | Where something says otherwise, asks you before acting on it; where nothing does, follows it and names its age. The home page lists it to check |
+| stale | below 0.4 | Checks it against the code first, then asks you or follows it as for uncertain; curation asks whether it still holds |
 
-The agent weighs these against the task: a step that is cheap to undo can go ahead on a weak memory, while one that is hard to undo waits for a check or a question to the user.
+A memory backed only by an inference is treated as a hypothesis and checked first. Whatever the level, a step that is hard to undo waits for a check or a question to you.
 
 A memory that was replaced by a newer one becomes **history**: it stays in the folder so the change can be traced, but the agent never acts on it. Personal memories are not scored.
 

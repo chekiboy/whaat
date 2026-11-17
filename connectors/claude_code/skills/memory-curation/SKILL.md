@@ -29,7 +29,8 @@ A free-text request ("apply rows 3, 5") maps to the same operation. `W` below is
    facts; its duplicate and stale lists are only candidates, by word overlap and by backticked paths
    missing from the repo's origin default ref (generated files such as `vendor/` or `.nuxt/` appear there and are fine).
    Its Validity section lists `uncertain` and `stale` files: each `stale` one is a `verify` row (still true,
-   and still needed?); when the check holds, the apply step sets `confirmed: <today>`. Superseded files are
+   and still needed?); when the check holds, the apply step sets `confirmed: <today>`; when it fails, apply changes
+   nothing and names the file and what failed in its reply, for the user to decide. Superseded files are
    history, never `delete` rows. Its Recall outcomes section names memories whose trigger keeps opening them
    for the wrong task (a `retrigger` row) and memories that misled a session (check they were fixed).
 2. Judge each dir (the dirs of the lint's Index sizes) by its brief, never by words of your own:
@@ -52,7 +53,8 @@ A free-text request ("apply rows 3, 5") maps to the same operation. `W` below is
      section (file, check, reason).
    Before writing rows, read what the user discarded in earlier reports: `W journal discarded`. A proposal with the same file and the same `actions` that the user
    discarded is not made again, unless that entry says `changed_since: true` (the file changed after that report);
-   then make it again only if it still holds, and say in its reason that it was discarded on <report_date>.
+   then make it again when it still holds, saying in its reason that it was discarded on <report_date>, and leave
+   it out when it does not.
 3. Write the report as JSON to `memory-curation.json` in the scratchpad with the Write tool:
    ```
    {"lint_summary": "<index sizes and the problem counts by check>",
@@ -75,7 +77,8 @@ A free-text request ("apply rows 3, 5") maps to the same operation. `W` below is
    ${CLAUDE_SKILL_DIR}/../../scripts/whaat journal save-curation < <scratchpad>/memory-curation.json
    ${CLAUDE_SKILL_DIR}/../../scripts/whaat open <report_id>
    ```
-   If whaat refuses it, fix what its message names in the file and save again.
+   If whaat refuses it, fix what its message names in the file and save again. If it still refuses, or cannot be
+   reached, say so with its message and give the full path of `memory-curation.json`.
 
 In report mode never write, move, delete or commit anything in the store, and don't save memories
 about this run: the store is shared and nobody reviewed the report yet. After the report, stop and

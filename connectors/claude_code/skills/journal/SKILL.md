@@ -38,8 +38,8 @@ person, plain:
 Then `own_words`: the moments this session where I spoke in my own voice about a feeling, about myself, or
 through an analogy: each quoted verbatim from the transcript with its HH:MM (`at`, `quote`); the user's message
 I was answering, verbatim, when the moment came in reply to one (`answering`, otherwise null: unprompted); and
-the user's reaction verbatim if there was one (`reaction`), with how I took it (`how_taken`). Never compose one
-at entry time; an empty list is a fine answer. This is raw material: what it is used for is decided later, by
+the user's reaction verbatim (`reaction`), with how I took it (`how_taken`), both null when there was none. Never
+compose one at entry time; an empty list is a fine answer. This is raw material: what it is used for is decided later, by
 a separate step.
 
 No code, no secrets, no colleague's personal data.

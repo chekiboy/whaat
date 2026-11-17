@@ -61,9 +61,9 @@ they are; `--json` gives the whole answer. Claude Code writes its own memory in 
 whaat converts a loose group's files on the way, the same way every time, so never convert them yourself.
 
 If the plan warns that the personal memory still sits at the memory root, this identity's folder holds an older
-memory in place: on the live instance, `claude`'s folder is the private archive. Tell the user, and on their yes run
-`whaat memory move-personal`. It moves that memory into `personal/` in one commit, keeping the history of tracked
-files. Until then the import refuses to write the root.
+memory in place: on the live instance, `claude`'s folder is the private archive. Tell the user. On their yes run
+`whaat memory move-personal`, which moves that memory into `personal/` in one commit, keeping the history of tracked
+files. On a no, stop before the import and say so: until the move, the import refuses to write the root.
 
 ## 3. The user chooses on the page
 

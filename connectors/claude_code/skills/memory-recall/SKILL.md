@@ -37,12 +37,21 @@ it is not running.
    commands it names still exist.
    A returning memory says how far it can be trusted: `Truthness` (what backs it, and how its recalls went since its
    last change) and `Validity` (its level, score and age). A `⚠` line under them names the state of that knowledge,
-   not what to do: a stale or uncertain memory may no longer hold, a weakly backed one (inferred, or it misled
-   before) is a hypothesis, a history one was replaced. What follows is the situation's call: weigh what it costs
-   if the memory is wrong against what a check or a question costs. A step that is cheap to undo and in plain view
-   can go ahead on it, with its age or its weakness named in your reply; one that is hard to undo, reaches outside,
-   or carries much of the work waits for a check against the code or a question to the user. A history memory is
-   never acted on.
+   not what to do. What to do follows from the level, and from whether the code, the docs or another memory says
+   otherwise:
+   - `certain`: follow it.
+   - `likely`: follow it. Where the code, the docs or another memory says otherwise, still follow it, and name the
+     difference in your reply.
+   - `uncertain`: where the code, the docs or another memory says otherwise, ask the user before acting on it, and
+     name its age and the difference in the question. Where nothing says otherwise, follow it and name its age in
+     your reply.
+   - `stale`: check it against the code first. Where something says otherwise, ask the user as for `uncertain`;
+     where it holds, follow it and name its age in your reply.
+   - A weakly backed one (inferred, or it misled before) is a hypothesis: check it before relying on it, and name
+     its weakness in your reply.
+   - A history one was replaced: never act on it.
+   Whatever the level, a step that is hard to undo, reaches outside or carries much of the work waits for a check
+   against the code or a question to the user.
    How it arrives: a recall `open` prints one line, and the whaat plugin's hook (memory-frame)
    puts the memory into your context as a `Memory: <file>` note; it also reminds you on each user message to run `index`
    before replying. The hook puts a memory into each agent's context once: what this agent already

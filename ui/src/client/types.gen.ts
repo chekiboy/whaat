@@ -3073,7 +3073,8 @@ export type SessionReportContent = {
 /**
  * StartCall
  *
- * One SessionStart hook: which level and part, the hook event's session and source, the repo key from its cwd.
+ * One SessionStart hook, or the PreCompact hook with level `compact`, which only logs the compaction: which level
+ * and part, the hook event's session and source, the repo key from its cwd.
  */
 export type StartCall = {
     /**
@@ -3092,7 +3093,7 @@ export type StartCall = {
     /**
      * Level
      */
-    level: 'global' | 'map' | 'project' | 'repo' | 'personal';
+    level: 'global' | 'map' | 'project' | 'repo' | 'personal' | 'compact';
     /**
      * Outline
      *

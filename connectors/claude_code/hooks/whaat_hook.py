@@ -39,7 +39,9 @@ def base_url() -> str:
     return f"http://{lookup('WHAAT_HOST') or DEFAULT_HOST}:{port}"
 
 
-def call(path: str, payload: dict[str, object] | None = None) -> dict[str, object] | None:
+def call(
+    path: str, payload: dict[str, object] | None = None, refused: dict[str, object] | None = None
+) -> dict[str, object] | None:
     """POST payload (GET without one) with this identity's token; None when there is no token, no server or an error,
     so a hook that cannot ask says nothing rather than blocking the call."""
     token = lookup("WHAAT_TOKEN")
@@ -55,6 +57,8 @@ def call(path: str, payload: dict[str, object] | None = None) -> dict[str, objec
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
             result = json.load(response)
+    except urllib.error.HTTPError:
+        return refused
     except (urllib.error.URLError, OSError, ValueError):
         return None
     return result if isinstance(result, dict) else None

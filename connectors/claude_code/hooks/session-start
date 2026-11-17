@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """SessionStart hook: memory-where --context on this identity's memory, one part of one level per hook command.
 
-    session-start --context global|project|repo N/M   part N of M of that index, printed as is
+    session-start --context index N/M                 part N of the index memory-recall gives, logged under this
+                                                      session, so a recall with its digest as known= answers in one
+                                                      line; the last hook names the next part when there are more
     session-start --context map 1/1                   the memory map, printed as is
     session-start --context personal N/M              part N of M of the personal core, as additionalContext
+    session-start --context compact 1/1               PreCompact of the main agent: logs the compaction before the
+                                                      SessionStart that follows it, and prints nothing; a compaction
+                                                      precomputed beside the turn and then dropped is logged too
 
 whaat builds each part and logs the core files it puts in (purpose=load), so memory-frame names them as already in the
 context. The repo key comes from the event's cwd here, as memory-where resolves it. When whaat does not answer, the
@@ -18,7 +23,7 @@ import sys
 
 import whaat_hook
 
-LEVELS = ("global", "map", "project", "repo", "personal")
+LEVELS = ("map", "personal", "index", "compact")
 
 
 def main():
@@ -33,26 +38,53 @@ def main():
     if not isinstance(event, dict):
         event = {}
     cwd = event.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    if args[1] == "index":
+        print_index_part(event, cwd, part, parts)
+        return
     payload = {
         "level": args[1],
         "part": part,
         "parts": parts,
         "session": event.get("session_id") or "",
         "source": event.get("source") or "",
-        "key": whaat_hook.repo_key(cwd) if args[1] in ("project", "repo") else None,
         "cli": whaat_hook.CLI,
     }
+    if args[1] == "compact" and event.get("agent_id"):
+        return
     started = whaat_hook.call("/api/v1/memory/recall/start", payload)
+    if args[1] == "compact" and started is not None:
+        return
     if started is None and whaat_hook.lookup("WHAAT_TOKEN") and whaat_hook.ensure_server():
         started = whaat_hook.call("/api/v1/memory/recall/start", payload)
     text = started and started.get("text")
-    if not text:
+    if args[1] == "compact" or not text:
         return
     if started.get("additional_context"):
         print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": text}},
                          ensure_ascii=False))
     else:
         print(text)
+
+
+def print_index_part(event, cwd, part, hooks):
+    """Logged as the main agent's own parts, so its first recall with known= gets one line."""
+    body = {"session": event.get("session_id") or "", "task": "session start: the index of this repo", "cwd": cwd,
+            "key": whaat_hook.repo_key(cwd), "part": part}
+    found = whaat_hook.call("/api/v1/memory/recall/index", body, refused={})
+    if found is None and whaat_hook.lookup("WHAAT_TOKEN") and whaat_hook.ensure_server():
+        found = whaat_hook.call("/api/v1/memory/recall/index", body, refused={})
+    if not found or not found.get("text"):
+        return
+    total = found["parts"]
+    if part == total:
+        footer = f"That was the last part ({total} of {total}).\n"
+    else:
+        footer = found["footer"] if part == hooks else ""
+    print((found["text"] + footer).rstrip("\n"))
+    whaat_hook.call(
+        "/api/v1/memory/recall/seen",
+        {"session": body["session"], "agent": "", "digest": found["digest"], "part": part, "parts": total},
+    )
 
 
 if __name__ == "__main__":

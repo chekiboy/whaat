@@ -197,9 +197,10 @@ class Guarded(BaseModel):
 
 
 class StartCall(Strict):
-    """One SessionStart hook: which level and part, the hook event's session and source, the repo key from its cwd."""
+    """One SessionStart hook, or the PreCompact hook with level `compact`, which only logs the compaction: which level
+    and part, the hook event's session and source, the repo key from its cwd."""
 
-    level: Literal["global", "map", "project", "repo", "personal"]
+    level: Literal["global", "map", "project", "repo", "personal", "compact"]
     part: int = Field(ge=1)
     parts: int = Field(ge=1)
     session: str = ""

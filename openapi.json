@@ -5013,7 +5013,7 @@
       },
       "StartCall": {
         "additionalProperties": false,
-        "description": "One SessionStart hook: which level and part, the hook event's session and source, the repo key from its cwd.",
+        "description": "One SessionStart hook, or the PreCompact hook with level `compact`, which only logs the compaction: which level\nand part, the hook event's session and source, the repo key from its cwd.",
         "properties": {
           "cli": {
             "description": "The plugin's whaat CLI path, for the open commands of a core over the hooks.",
@@ -5042,7 +5042,8 @@
               "map",
               "project",
               "repo",
-              "personal"
+              "personal",
+              "compact"
             ],
             "title": "Level",
             "type": "string"

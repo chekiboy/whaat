@@ -35,9 +35,9 @@ when the core changed. Below is only its outline."""
 
 INSTRUCTIONS = """whaat keeps this identity's memory, journal and reports in every client and session; a client's own
 memory feature does not reach it, so save here what the identity should keep.
-Recall: start each task with memory_index (the task in a sentence; the repo's path or key), then memory_open each memory
-whose trigger matches, saying in `because` which words match. memory_dump reads a whole dir, only to curate, review or
-save; memory_where only names the dirs.
+Recall: before each reply call memory_index (what the message asks for, in a sentence; the repo's path or key), then
+memory_open each memory whose trigger matches, saying in `because` which words match. memory_dump reads a whole dir,
+only to curate, review or save; memory_where only names the dirs.
 Save: when the work taught something that should outlive the session, above all a user's correction or decision, use
 memory_save (format in its description) and fix what its warnings name.
 Before reporting a task done: memory_reads lists what this session opened; memory_record whether each recall held,

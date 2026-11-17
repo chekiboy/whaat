@@ -1,6 +1,6 @@
 ---
 name: memory-recall
-description: Use at the start of every task, and again right before a git push, a commit, opening an MR or a cloud call, to find the memories that apply and read them. The only way to read this identity's memory through whaat; a direct read of a memory file is declined with the command to use.
+description: Use before replying to each user message, and again right before a git push, a commit, opening an MR or a cloud call, to find the memories that apply and read them. The only way to read this identity's memory through whaat; a direct read of a memory file is declined with the command to use.
 argument-hint: "index task=\"<what you are doing>\" [path=<dir>] | open file=<path> because=\"<trigger words that match>\" [purpose=recall|save|curate|review|load] | dump dir=<dir> purpose=curate|review|save because=\"<why>\""
 effort: high
 ---
@@ -37,8 +37,8 @@ it is not running.
    or carries much of the work waits for a check against the code or a question to the user. A history memory is
    never acted on.
    How it arrives: a recall `open` prints one line, and the whaat plugin's hook (memory-frame)
-   puts the memory into your context as a `Memory: <file>` note; it also reminds you on each user message that a new or
-   changed task starts with `index`. The hook puts a memory into each agent's context once: what this agent already
+   puts the memory into your context as a `Memory: <file>` note; it also reminds you on each user message to run `index`
+   before replying. The hook puts a memory into each agent's context once: what this agent already
    holds (an earlier put-in, or for the main session the core loaded at the start, until a compaction) is named,
    not repeated; `force=1` repeats it. A subagent starts empty and gets its own copy.
    No hook note after an `open` means the hook is not installed: install the whaat plugin with its hooks.

@@ -4,7 +4,9 @@ identity's kept token into that config's settings, so the agent works as the ide
 The token goes into the file only: the start command is shown in the UI."""
 
 import json
+import logging
 import os
+import re
 import shlex
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -14,6 +16,18 @@ from typing import Any
 from whaat.config import Settings
 
 CONNECTOR = Path(__file__).resolve().parents[4] / "connectors" / "claude_code"
+RULE_BEGIN = "<memory_handling>"
+RULE_END = "</memory_handling>"
+RECALL_RULE = f"""{RULE_BEGIN}
+## Memory
+
+Before every reply, recall your memories through the whaat:memory-recall skill: run `memory-recall index task="<what
+the message asks for>"`. While an index you yourself read in full is still in your context, pass its digest as
+`known=<digest>` and you get one line back; with none in your context, leave `known` out and read every part it gives.
+Then open each memory whose trigger matches. No match is a valid result: say so. When whaat answers that no token is
+set, this session has no identity: skip recall for it.
+{RULE_END}
+"""
 
 
 class AgentTokenMissingError(RuntimeError):
@@ -96,6 +110,49 @@ def add_connector(settings_file: Path) -> None:
     write_agent_env(settings_file, {PLUGIN_DIRS: with_connector(current)})
 
 
+class ClaudeMdUnusableError(RuntimeError):
+    def __init__(self, claude_md: Path, why: str) -> None:
+        super().__init__(f"{claude_md} {why}: fix it first, whaat leaves it as it is")
+
+
+RULE_MARK = "whaat:memory-recall"
+
+
+def check_claude_md(claude_md: Path) -> None:
+    """A CLAUDE.md whaat could not read as text or write back is never touched."""
+    target = claude_md.resolve()
+    if target.exists():
+        try:
+            target.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as err:
+            raise ClaudeMdUnusableError(claude_md, "cannot be read as UTF-8 text") from err
+        if not os.access(target, os.W_OK):
+            raise ClaudeMdUnusableError(claude_md, "is not writable")
+    if target.parent.exists() and not os.access(target.parent, os.W_OK):
+        raise ClaudeMdUnusableError(claude_md, "cannot be written: its folder is not writable")
+
+
+def add_recall_rule(claude_md: Path) -> None:
+    """Puts whaat's recall rule at the top of this CLAUDE.md in place of an earlier one, so connecting again changes
+    nothing else."""
+    target = claude_md.resolve()
+    old = target.read_text(encoding="utf-8") if target.exists() else ""
+    text = old
+    for block in re.findall(rf"{re.escape(RULE_BEGIN)}.*?{re.escape(RULE_END)}\n?", old, re.S):
+        if RULE_MARK in block:
+            text = text.replace(block, "", 1)
+    rest = text.lstrip("\n")
+    text = RECALL_RULE + ("\n" + rest if rest else "")
+    if text == old:
+        return
+    target.parent.mkdir(parents=True, exist_ok=True)
+    part = target.with_name(target.name + ".part")
+    part.write_text(text, encoding="utf-8")
+    if target.exists():
+        os.chmod(part, target.stat().st_mode & 0o7777)
+    os.replace(part, target)
+
+
 def write_agent_env(settings_file: Path, values: dict[str, str]) -> None:
     """Set these keys in the config's settings.json `env` and keep the rest; written whole, owner-only."""
     data = _read_settings(settings_file)
@@ -123,6 +180,11 @@ def launch_for(
     if not token:
         raise AgentTokenMissingError(identity)
     write_agent_env(Path(config_dir) / "settings.json", agent_env(token, settings))
+    try:
+        check_claude_md(Path(config_dir) / "CLAUDE.md")
+        add_recall_rule(Path(config_dir) / "CLAUDE.md")
+    except ClaudeMdUnusableError as err:
+        logging.getLogger(__name__).warning("recall rule not written: %s", err)
     return Launch(
         command=f"{command} --plugin-dir {shlex.quote(str(CONNECTOR))}", env={"CLAUDE_CONFIG_DIR": config_dir}
     )

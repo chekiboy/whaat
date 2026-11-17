@@ -128,7 +128,10 @@ The plugin's skills run as `/whaat:<name>`: `memory` (save), `memory-recall`, `m
 - **The identity's token** goes into the project's `.claude/settings.local.json` and is never printed. If git does not ignore that file, the command tells you to add it to `.gitignore`.
 - **whaat's plugin** goes into your Claude Code `settings.json`, because Claude Code does not load plugin folders from a project's settings. It takes the place of another checkout's whaat plugin there; other plugins and keys stay.
 - **With `--global`** the token goes into your Claude Code `settings.json` instead, so the agent works as this identity in every project.
-- **A settings file that is not a JSON object** is left as it is, and nothing is written.
+- **whaat's recall rule** goes at the top of the same config's `CLAUDE.md`, between `<memory_handling>` tags, because a plugin cannot bring a `CLAUDE.md` and an agent only recalls on its own when one asks it to. Every project of that config reads it; connecting again replaces only whaat's block.
+- **A settings file that is not a JSON object**, or a `CLAUDE.md` that cannot be read or written, is left as it is, and nothing is written.
+
+After updating whaat, restart its server (the ↻ button in the UI) and start the open Claude Code sessions again, or run `/reload-plugins` in them: a server keeps the code it started with, and a session keeps the hooks it loaded at its start.
 
 For a single session without connecting, `claude --plugin-dir /path/to/whaat/connectors/claude_code` loads the plugin, with `WHAAT_TOKEN` set in its environment.
 

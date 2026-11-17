@@ -165,23 +165,27 @@ def connect(
 ) -> None:
     """Connect Claude Code to whaat: sessions started in this folder work as this identity, its token in the
     project's local settings only. whaat's plugin goes into the user's Claude settings, since Claude Code does
-    not load plugin folders from a project's settings. Starts the server when it does not run."""
+    not load plugin folders from a project's settings, and its recall rule into that config's CLAUDE.md, since a
+    plugin cannot bring one. Starts the server when it does not run."""
     identity_file = claude_settings_file(global_, Path.cwd(), os.environ)
     plugin_file = claude_settings_file(True, Path.cwd(), os.environ)
     try:
         agent.check_writable(identity_file)
         agent.check_writable(plugin_file)
-    except agent.SettingsUnreadableError as err:
+        agent.check_claude_md(plugin_file.parent / "CLAUDE.md")
+    except (agent.SettingsUnreadableError, agent.ClaudeMdUnusableError) as err:
         typer.echo(str(err), err=True)
         raise typer.Exit(1) from err
     settings = load_settings()
     typer.echo(_ensure_running(settings), err=True)
     agent.write_agent_env(identity_file, agent.agent_env(_connect_token(settings, identity), settings))
     agent.add_connector(plugin_file)
+    agent.add_recall_rule(plugin_file.parent / "CLAUDE.md")
     if not global_:
         _warn_unless_ignored(identity_file)
     typer.echo(f"connected: sessions reading {identity_file} work as {identity} on whaat {settings.instance}")
     typer.echo(f"whaat's plugin loads from {plugin_file}")
+    typer.echo(f"whaat's recall rule is in {plugin_file.parent / 'CLAUDE.md'}")
 
 
 def report_url(settings: Settings, report_id: str) -> str:

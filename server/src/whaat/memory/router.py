@@ -138,7 +138,7 @@ def _refused(err: recall.RecallError) -> HTTPException:
 def recall_index(call: RecallIndex, service: MemoryServiceDep, identity: IdentityDep) -> dict[str, object]:
     """memory-recall index: the triggers that apply, one memory-recall.log line with the task."""
     try:
-        return recall.index(service.roots(identity), call.session, call.task, call.cwd, call.repo, call.key)
+        return recall.index(service.roots(identity), call.session, call.task, call.cwd, call.repo, call.key, call.known)
     except recall.RecallError as err:
         raise _refused(err) from err
 

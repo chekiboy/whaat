@@ -1,7 +1,7 @@
 ---
 name: memory-recall
 description: Use before replying to each user message, and again right before a git push, a commit, opening an MR or a cloud call, to find the memories that apply and read them. The only way to read this identity's memory through whaat; a direct read of a memory file is declined with the command to use.
-argument-hint: "index task=\"<what you are doing>\" [path=<dir>] | open file=<path> because=\"<trigger words that match>\" [purpose=recall|save|curate|review|load] | dump dir=<dir> purpose=curate|review|save because=\"<why>\""
+argument-hint: "index task=\"<what you are doing>\" [path=<dir>] [known=<digest>] | open file=<path> because=\"<trigger words that match>\" [purpose=recall|save|curate|review|load] | dump dir=<dir> purpose=curate|review|save because=\"<why>\""
 effort: high
 ---
 
@@ -18,7 +18,10 @@ it is not running.
 1. `whaat memory index task="<what you are doing>"` prints the
    global, project and repo indexes for the current directory (`path=<dir>` for another repo), then the personal
    one (memories about the user and working together; their paths start with `personal:`). Each line is a
-   memory and its trigger: the situation in which it must be read.
+   memory and its trigger: the situation in which it must be read. Its header names the index's digest: pass it
+   back as `known=<digest>` while that index is still in your context, and whaat answers with one line when it is
+   unchanged; open from the copy you hold. With no index in sight (a fresh subagent, after a compaction), leave
+   `known` out and get the whole index.
 2. For each line whose trigger matches the task:
    `whaat memory open file=<path> because="<the trigger words that match, and the part of the task they match>"`.
    Open only what matches; never a dir wholesale. No match is a valid result: say so.

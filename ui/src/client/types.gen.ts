@@ -2296,6 +2296,12 @@ export type RecallIndex = {
         string
     ] | null;
     /**
+     * Known
+     *
+     * The digest of the last index the caller still holds in its context, if any.
+     */
+    known?: string | null;
+    /**
      * Repo
      *
      * The repo= argument (group or group/repo), as given.
@@ -2318,13 +2324,27 @@ export type RecallIndex = {
  */
 export type RecallIndexed = {
     /**
-     * Sections
+     * Digest
+     *
+     * Of the sections; pass it back as `known` while they stay in the context.
      */
-    sections: Array<IndexSection>;
+    digest: string;
+    /**
+     * Sections
+     *
+     * None when `known` matched an index this session got since its last compaction.
+     */
+    sections: Array<IndexSection> | null;
     /**
      * Store
      */
     store: string;
+    /**
+     * Unchanged Since
+     *
+     * When this session got that same index; None with sections.
+     */
+    unchanged_since: string | null;
 };
 
 /**

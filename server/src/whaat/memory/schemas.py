@@ -50,6 +50,9 @@ class RecallIndex(RecallCall):
     key: list[str] | None = Field(
         default=None, min_length=2, max_length=2, description="(project, repo) the caller resolved from cwd."
     )
+    known: str | None = Field(
+        default=None, description="The digest of the last index the caller still holds in its context, if any."
+    )
 
 
 class RecallOpen(RecallCall):
@@ -77,7 +80,11 @@ class IndexSection(BaseModel):
 
 class RecallIndexed(BaseModel):
     store: str
-    sections: list[IndexSection]
+    digest: str = Field(description="Of the sections; pass it back as `known` while they stay in the context.")
+    sections: list[IndexSection] | None = Field(
+        description="None when `known` matched an index this session got since its last compaction."
+    )
+    unchanged_since: str | None = Field(description="When this session got that same index; None with sections.")
 
 
 class RecallOpened(BaseModel):

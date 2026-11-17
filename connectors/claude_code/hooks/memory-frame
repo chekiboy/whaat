@@ -54,7 +54,8 @@ def user_prompt_submit(event):
         return None
     return {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": (
         "Memory: before you reply, run memory-recall index task=\"<what this message asks for>\" and open each "
-        "memory whose trigger matches.")}}
+        "memory whose trigger matches. Pass known=<digest> from the last index you still see in your context; "
+        "with none in sight, leave known out.")}}
 
 
 def main():

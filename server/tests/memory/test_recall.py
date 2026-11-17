@@ -66,6 +66,7 @@ def test_index_lists_each_layer_with_its_prefix_and_logs_the_task(
             ],
         ),
     ]
+    assert found["unchanged_since"] is None
     [line] = logged(settings)
     assert {k: v for k, v in line.items() if k != "at"} == {
         "session": "abcd1234",
@@ -73,7 +74,38 @@ def test_index_lists_each_layer_with_its_prefix_and_logs_the_task(
         "task": "review the shop",
         "cwd": "/x/shop",
         "repo": None,
+        "digest": found["digest"],
     }
+
+
+def test_a_known_index_comes_back_as_unchanged_only_in_the_session_that_got_it_and_until_a_compaction(
+    client: TestClient, settings: Settings, trial: dict[str, str], memory: Path
+) -> None:
+    first = call(client, trial, "index", task="review the shop", cwd="/x").json()
+    digest = first["digest"]
+    again = call(client, trial, "index", task="another task", cwd="/x", known=digest).json()
+    stale = call(client, trial, "index", task="another task", cwd="/x", known="0" * 12).json()
+    elsewhere = client.post(
+        "/api/v1/memory/recall/index",
+        json={"session": "ffff0000", "task": "another task", "cwd": "/x", "known": digest},
+        headers=trial,
+    ).json()
+    log = settings.state_dir / "identities" / "trial" / "state" / "memory-recall.log"
+    with log.open("a") as handle:
+        handle.write(json.dumps({"at": "2026-11-17T12:00:00", "session": "abcd1234", "op": "compact"}) + "\n")
+    compacted = call(client, trial, "index", task="another task", cwd="/x", known=digest).json()
+    write(memory / "MEMORY.md", "- feedback_g.md — When g changes\n")
+    changed = call(client, trial, "index", task="another task", cwd="/x", known=digest).json()
+
+    assert first["sections"] is not None
+    assert again["sections"] is None
+    assert again["digest"] == digest
+    assert again["unchanged_since"] == logged(settings)[0]["at"]
+    assert stale["sections"] == first["sections"]
+    assert elsewhere["sections"] == first["sections"]
+    assert compacted["sections"] == first["sections"]
+    assert changed["sections"] is not None
+    assert changed["digest"] != digest
 
 
 def test_index_needs_a_task_and_a_repo_that_is_a_store_dir(

@@ -5,6 +5,7 @@ is no memory of the store here either.
 """
 
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -78,9 +79,18 @@ def purpose_of(purpose: str | None, allowed: tuple[str, ...]) -> str:
 
 
 def index(
-    roots: Roots, session: str, task: str, cwd: str, repo: str | None, key: list[str] | None
+    roots: Roots,
+    session: str,
+    task: str,
+    cwd: str,
+    repo: str | None,
+    key: list[str] | None,
+    known: str | None = None,
 ) -> dict[str, object]:
-    """The global, project, repo and personal indexes; key is the (project, repo) the caller resolved from cwd."""
+    """The global, project, repo and personal indexes; key is the (project, repo) the caller resolved from cwd.
+
+    Each answer carries the digest of its sections. When `known` is that digest and this session got the same index
+    since its last compaction, the sections are left out: the caller still holds them."""
     task = task.strip()
     if len(task) < 10:
         raise RecallError('memory-recall index: task="<what you are doing>" is required: the log ties each open to it')
@@ -120,8 +130,26 @@ def index(
                     trigger = line.split("—", 1)[-1].strip() if "—" in line else line.strip()
                     entries.append({"file": prefix + m.group(1), "trigger": trigger})
         sections.append({"label": label, "prefix": prefix, "entries": entries})
-    log(roots, session, {"op": "index", "task": task, "cwd": cwd, "repo": repo})
-    return {"store": store, "sections": sections}
+    digest = hashlib.sha256(json.dumps(sections, sort_keys=True).encode("utf-8")).hexdigest()[:12]
+    since = given_since(roots, session, digest) if known == digest else None
+    log(roots, session, {"op": "index", "task": task, "cwd": cwd, "repo": repo, "digest": digest})
+    if since:
+        return {"store": store, "digest": digest, "sections": None, "unchanged_since": since}
+    return {"store": store, "digest": digest, "sections": sections, "unchanged_since": None}
+
+
+def given_since(roots: Roots, session: str, digest: str) -> str | None:
+    """When this session first got the index with this digest since its last compaction, else None."""
+    since = None
+    for event in _events(roots):
+        if event.get("session") != session[:8]:
+            continue
+        if event.get("op") == "compact":
+            since = None
+        elif event.get("op") == "index" and event.get("digest") == digest and since is None:
+            at = event.get("at")
+            since = at if isinstance(at, str) else None
+    return since
 
 
 def open_memory(roots: Roots, session: str, file: str, because: str, purpose: str | None) -> dict[str, object]:

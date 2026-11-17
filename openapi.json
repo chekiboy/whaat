@@ -3686,6 +3686,18 @@
             "description": "(project, repo) the caller resolved from cwd.",
             "title": "Key"
           },
+          "known": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The digest of the last index the caller still holds in its context, if any.",
+            "title": "Known"
+          },
           "repo": {
             "anyOf": [
               {
@@ -3718,21 +3730,48 @@
       },
       "RecallIndexed": {
         "properties": {
+          "digest": {
+            "description": "Of the sections; pass it back as `known` while they stay in the context.",
+            "title": "Digest",
+            "type": "string"
+          },
           "sections": {
-            "items": {
-              "$ref": "#/components/schemas/IndexSection"
-            },
-            "title": "Sections",
-            "type": "array"
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/IndexSection"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "None when `known` matched an index this session got since its last compaction.",
+            "title": "Sections"
           },
           "store": {
             "title": "Store",
             "type": "string"
+          },
+          "unchanged_since": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When this session got that same index; None with sections.",
+            "title": "Unchanged Since"
           }
         },
         "required": [
           "store",
-          "sections"
+          "digest",
+          "sections",
+          "unchanged_since"
         ],
         "title": "RecallIndexed",
         "type": "object"

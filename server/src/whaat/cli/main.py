@@ -446,7 +446,7 @@ def memory_delete(path: Annotated[str, typer.Argument(help="The memory's path be
 
 RECALL_USAGE = """The one way to read this identity's memories, as memory-recall:
 
-    whaat memory index task="<what you are doing>" [path=<dir> | repo=<group or group/repo>]
+    whaat memory index task="<what you are doing>" [path=<dir> | repo=<group or group/repo>] [known=<digest>]
     whaat memory open file=<path index printed> because="<which words of its trigger match the task>"
                       [purpose=recall|save|curate|review|load] [force=1]
     whaat memory dump dir=<memory-relative dir> purpose=curate|review|save because="<why>"
@@ -505,9 +505,22 @@ def recall_index(args: NameValues = None) -> None:
     cwd = a.get("path") or os.getcwd()
     key = None if a.get("repo") else repo_key(Path(cwd).expanduser().resolve())
     found = _recall(
-        "index", {"task": a.get("task", ""), "cwd": cwd, "repo": a.get("repo"), "key": list(key) if key else None}
+        "index",
+        {
+            "task": a.get("task", ""),
+            "cwd": cwd,
+            "repo": a.get("repo"),
+            "key": list(key) if key else None,
+            "known": a.get("known") or None,
+        },
     )
-    typer.echo(f"store {found['store']}")
+    if found["sections"] is None:
+        typer.echo(
+            f"index {found['digest']} unchanged since {found['unchanged_since'][11:16]}: it is above in your context,"
+            " open from it. If it is no longer there, run index again without known=."
+        )
+        return
+    typer.echo(f"store {found['store']}\nindex {found['digest']} (pass known={found['digest']} next time)")
     typer.echo('Open a memory only through: whaat memory open file=<path below> because="<trigger words that match>"\n')
     for section in found["sections"]:
         typer.echo(f"## {section['label']}: {section['prefix'] or '(store root)'}")

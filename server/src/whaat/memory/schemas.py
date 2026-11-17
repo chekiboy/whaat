@@ -51,8 +51,9 @@ class RecallIndex(RecallCall):
         default=None, min_length=2, max_length=2, description="(project, repo) the caller resolved from cwd."
     )
     known: str | None = Field(
-        default=None, description="The digest of the last index the caller still holds in its context, if any."
+        default=None, description="The digest of an index the caller read every part of and still holds, if any."
     )
+    part: int = Field(default=1, ge=1, description="Which part of the index to return, from 1.")
 
 
 class RecallOpen(RecallCall):
@@ -80,11 +81,20 @@ class IndexSection(BaseModel):
 
 class RecallIndexed(BaseModel):
     store: str
-    digest: str = Field(description="Of the sections; pass it back as `known` while they stay in the context.")
+    digest: str = Field(
+        description="Of the whole index; pass it back as `known` while every part stays in the context."
+    )
+    part: int = Field(description="The part this answer carries.")
+    parts: int = Field(description="How many parts the index has.")
     sections: list[IndexSection] | None = Field(
         description="None when `known` matched an index this session got since its last compaction."
     )
     unchanged_since: str | None = Field(description="When this session got that same index; None with sections.")
+    missing: list[int] = Field(
+        default_factory=list, description="On the last part: the parts this session has not read since its compaction."
+    )
+    text: str = Field(description="The part, or the unchanged line, as memory-recall prints it.")
+    footer: str = Field(description="memory-recall's last line: the next part, the parts still missing, or the end.")
 
 
 class RecallOpened(BaseModel):
@@ -151,6 +161,23 @@ class FrameCall(Strict):
     uncapped: bool = Field(
         default=False, description="Put every block in, past the hook's size cap; for a caller without that cap."
     )
+
+
+class SeenCall(Strict):
+    """A memory-frame PostToolUse call for an index answer a Bash call printed, and the agent that ran it."""
+
+    session: str
+    agent: str = Field(default="", description="The hook event's agent_id; empty in the main session.")
+    digest: str
+    part: int | None = Field(
+        default=None, ge=1, le=1000, description="The part the answer carried; None for an unchanged answer."
+    )
+    parts: int = Field(ge=1, le=1000, description="How many parts the index has.")
+    unchanged: bool = False
+
+
+class Seen(BaseModel):
+    note: str | None = Field(description="A line correcting the answer for this agent; None when it holds.")
 
 
 class Framed(BaseModel):

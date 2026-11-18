@@ -114,6 +114,20 @@ def test_a_delete_removes_the_file_and_its_line_in_one_commit(
     assert deleted["commit"] and git(settings, "status", "--porcelain") == ""
 
 
+def test_a_personal_path_as_recall_names_it_saves_supersedes_and_deletes_in_the_personal_dir(
+    client: TestClient, settings: Settings, trial: dict[str, str]
+) -> None:
+    saved = save(client, trial, path="personal:feedback_y.md", trigger="When y").json()
+    save(client, trial, path="personal:feedback_y2.md", trigger="When y, now", unindex=["personal:feedback_y.md"])
+    client.delete("/api/v1/memory/memories/personal:feedback_y2.md", headers=trial)
+
+    assert saved["path"] == "personal/feedback_y.md"
+    assert (root(settings) / "personal/feedback_y.md").read_bytes() == CONTENT.encode()
+    assert not (root(settings) / "personal/feedback_y2.md").exists()
+    assert (root(settings) / "personal/MEMORY.md").read_text() == ""
+    assert not list(root(settings).glob("personal:*"))
+
+
 @pytest.mark.parametrize(
     "memory",
     [

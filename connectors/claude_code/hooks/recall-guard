@@ -7,10 +7,16 @@ identity's memories, and which ones this session already opened or dumped, whaat
 on an existing memory is declined: grep, git, writes (`>`, `sed -i`) and heredoc bodies pass, and so does a Read of a
 file this session already opened or dumped through recall (the Edit tool needs that Read). A call that names no `.md`
 file costs no request.
+
+A path is resolved the way the shell would see it: `$NAME` and `${NAME}` from the line's own assignments or the
+environment, `~`, globs, and the directory of an earlier `cd`; a reader inside `$(…)`, backticks or a `( … )` group
+counts too. The parse is not airtight: an interpreter (`python -c`), `xargs`, a loop variable or a copy read later
+still passes.
 """
 
 from __future__ import annotations
 
+import glob
 import json
 import os
 import re
@@ -20,6 +26,10 @@ import sys
 import whaat_hook
 
 READERS = {"cat", "sed", "head", "tail", "less", "more", "bat", "awk", "nl"}
+PREFIXES = {"!", "{", "do", "then", "else", "time", "exec", "command", "builtin", "nohup"}
+NESTED = re.compile(r"\$\(|`|[()]")
+ASSIGNMENT = re.compile(r"(\w+)=(.*)", re.S)
+VARIABLE = re.compile(r"\$(?:\{(\w+)\}|(\w+))")
 
 
 def heredoc_end(line):
@@ -38,39 +48,70 @@ def heredoc_end(line):
     return None
 
 
-def segments(command):
-    """Simple commands of a shell line, with heredoc bodies left out."""
-    out, body_end = [], None
+def lines(command):
+    """The lines of a shell command, with heredoc bodies left out."""
+    body_end = None
     for line in command.splitlines():
         if body_end is not None:
             if line.strip() == body_end:
                 body_end = None
             continue
         body_end = heredoc_end(line)
-        out += re.split(r"\|\||&&|[;|&]", line)
-    return out
+        yield line
 
 
-def runs_recall(segment):
-    """True when the segment itself runs whaat (directly or through python)."""
+def segments(command):
+    """Simple commands of a shell line, with heredoc bodies left out."""
+    return [segment for line in lines(command) for segment in re.split(r"\|\||&&|[;|&]", line)]
+
+
+def commands(line):
+    """The word lists of a line's simple commands, split on `;`, `&` and `|` only where they stand unquoted."""
+    lexer = shlex.shlex(line, posix=True, punctuation_chars=";&|")
+    lexer.whitespace_split, lexer.commenters = True, ""
     try:
-        words = shlex.split(segment, posix=True)
+        tokens = list(lexer)
     except ValueError:
-        words = segment.split()
-    while words and re.match(r"^\w+=", words[0]):
+        tokens = re.sub(r"[;&|]+", " ; ", line).split()
+    out = [[]]
+    for token in tokens:
+        if set(token) <= set(";&|"):
+            out.append([])
+        else:
+            out[-1].append(token)
+    return [words for words in out if words]
+
+
+def nested(words):
+    """The commands inside a command's `$(…)`, backticks and `( … )` groups, cut at those marks."""
+    out = [[]]
+    for word in words:
+        pieces = NESTED.split(word)
+        for i, piece in enumerate(pieces):
+            if i:
+                out.append([])
+            if piece:
+                out[-1].append(piece)
+    return [words for words in out if words]
+
+
+def runs_recall(words):
+    """True when the words themselves run whaat (directly or through python)."""
+    while words and ASSIGNMENT.fullmatch(words[0]):
         words = words[1:]
     if words and re.fullmatch(r"python3?(\.\d+)?", os.path.basename(words[0])):
         words = [w for w in words[1:] if not w.startswith("-")]
     return bool(words) and os.path.basename(words[0]) == "whaat"
 
 
-def read_targets(segment):
-    """The paths a reader command reads, or [] when the segment is no read."""
-    try:
-        words = shlex.split(segment, posix=True)
-    except ValueError:
-        words = segment.split()
-    while words and re.match(r"^\w+=", words[0]):
+def expand(word, env):
+    """One word with its `$NAME`, `${NAME}` and leading `~` filled in; an unknown variable stays as written."""
+    return os.path.expanduser(VARIABLE.sub(lambda m: env.get(m.group(1) or m.group(2), m.group(0)), word))
+
+
+def read_targets(words):
+    """The paths a reader command's words read, or [] when they are no read."""
+    while words and (ASSIGNMENT.fullmatch(words[0]) or words[0] in PREFIXES):
         words = words[1:]
     if not words or os.path.basename(words[0]) not in READERS:
         return []
@@ -136,9 +177,41 @@ def main():
         return
     if tool != "Bash":
         return
-    targets = [absolute(target) for segment in segments(data.get("command", "")) if not runs_recall(segment)
-               for target in read_targets(segment)]
+    try:
+        targets = bash_reads(data.get("command", ""), cwd, dict(os.environ))
+    except Exception:
+        return
     check(event, targets, must_exist=True)
+
+
+def bash_reads(command, cwd, env):
+    """The absolute paths the reader commands of a shell line read, after its assignments and `cd`s so far.
+    A command is read both whole and cut at its nested marks, since quoted text can hold those marks too."""
+    targets = []
+    for line in lines(command):
+        for whole in commands(line):
+            whole = [expand(word, env) for word in whole]
+            parts = nested(whole)
+            candidates = [whole] if parts == [whole] else [whole, *parts]
+            for i, words in enumerate(candidates):
+                if runs_recall(words):
+                    continue
+                while words and words[0] in PREFIXES:
+                    words = words[1:]
+                if words[:1] == ["export"]:
+                    words = words[1:]
+                steps = i > 0 or len(candidates) == 1
+                if steps and words and all(ASSIGNMENT.fullmatch(word) for word in words):
+                    env.update(ASSIGNMENT.fullmatch(word).groups() for word in words)
+                    continue
+                if steps and words[:1] in (["cd"], ["pushd"]):
+                    places = [word for word in words[1:] if not word.startswith("-")]
+                    cwd = os.path.realpath(os.path.join(cwd, places[0])) if places else os.path.expanduser("~")
+                    continue
+                for target in read_targets(words):
+                    path = os.path.realpath(os.path.join(cwd, target))
+                    targets += sorted(glob.glob(path)) if re.search(r"[*?[]", path) else [path]
+    return targets
 
 
 if __name__ == "__main__":

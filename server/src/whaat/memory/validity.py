@@ -387,14 +387,14 @@ def record(roots: Roots, session: str, outcome: str, paths: list[str]) -> str:
 
 
 def quality(roots: Roots, file: str) -> str:
-    """Truthness and validity of a memory as `index` names it, for the note that brings it back: what backs it and how
-    its recalls went since its last change, then its level, score and age (or history), and, when one of them is weak,
-    a `⚠` line that names the state of that knowledge, not what to do: the recall skill says what each level asks for. A
-    personal memory is not scored; its truthness comes from its frontmatter alone."""
+    """Truthness and validity of a memory as `index` names it, for the note that brings it back, on one line: what backs
+    it and how its recalls went since its last change, then its level, score and age in days (or history). When one of
+    them is weak, a `⚠` line follows that names the state of that knowledge, not what to do: the recall skill says what
+    each level asks for. A personal memory is not scored; its truthness comes from its frontmatter alone."""
     if file.startswith("personal:"):
         fm, _ = parse(os.path.join(roots.personal, file[len("personal:") :]))
         source = (fm or {}).get("source")
-        lines = [f"Truthness: source {source or 'unset'}", "Validity: not scored (personal memory)"]
+        lines = [f"Truthness: {source or 'unset'} · Validity: not scored (personal)"]
         if source == "inference":
             lines.append(WEAK_TRUTH.format(why="it was inferred, not measured or decided by the user"))
         return "\n".join(lines)
@@ -402,22 +402,18 @@ def quality(roots: Roots, file: str) -> str:
     if entry is None and os.path.isfile(os.path.join(roots.store, file)):
         _, entry = entry_of(file, refresh(roots))  # added after today's scores were written
     if entry is None:
-        return "Truthness: unknown\nValidity: not scored"
+        return "Truthness: unknown · Validity: not scored"
     raw = entry.get("outcomes")
     outcomes: dict[str, int] = raw if isinstance(raw, dict) else {}
     tally = ", ".join(f"{name} {outcomes.get(name, 0)}" for name in OUTCOMES)
-    lines = [f"Truthness: source {entry.get('source') or 'unset'}; since its last change {tally}"]
+    truthness = f"Truthness: {entry.get('source') or 'unset'}; {tally}"
     if "history" in entry:
-        lines.append(f"Validity: history, superseded by {entry['history']}")
-        lines.append(f"⚠ History: {entry['history']} replaced it.")
-        return "\n".join(lines)
+        history = entry["history"]
+        return f"{truthness} · Validity: history, superseded by {history}\n⚠ History: {history} replaced it."
     if "level" not in entry:
-        lines.append("Validity: undated (no confirmed date, held outcome or commit)")
+        lines = [f"{truthness} · Validity: undated"]
     else:
-        lines.append(
-            f"Validity: {entry['level']} {entry['score']:.2f} ({entry['age_days']} days since it was last confirmed,"
-            " held or added)"
-        )
+        lines = [f"{truthness} · Validity: {entry['level']} {entry['score']:.2f}, {entry['age_days']} d"]
         if entry["level"] in ("uncertain", "stale"):
             lines.append(
                 f"⚠ {str(entry['level']).capitalize()}: nobody has confirmed it or relied on it for {entry['age_days']}"

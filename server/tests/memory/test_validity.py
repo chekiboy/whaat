@@ -216,18 +216,19 @@ def test_a_returning_memory_carries_its_truthness_and_validity(
     personal = framed("personal:user_x.md", memory / "personal/user_x.md")
 
     age = (TODAY - datetime.date(2025, 3, 1)).days
-    assert stale.splitlines()[:5] == [
-        "Memory: acme/shop/feedback_stale.md",
-        "Truthness: source user-decision; since its last change held 0, misled 1, irrelevant 1",
-        f"Validity: stale 0.00 ({age} days since it was last confirmed, held or added)",
+    assert stale.splitlines()[:4] == [
+        "Memory: acme/shop/feedback_stale.md · Truthness: user-decision; held 0, misled 1, irrelevant 1"
+        f" · Validity: stale 0.00, {age} d",
         f"⚠ Stale: nobody has confirmed it or relied on it for {age} days.",
         "⚠ Weak truthness: it misled 1 time(s) since its last change.",
+        "",
     ]
-    assert gone.splitlines()[2:4] == [
-        "Validity: history, superseded by acme/shop/feedback_now.md",
-        "⚠ History: acme/shop/feedback_now.md replaced it.",
+    assert gone.splitlines()[0].endswith(" · Validity: history, superseded by acme/shop/feedback_now.md")
+    assert gone.splitlines()[1] == "⚠ History: acme/shop/feedback_now.md replaced it."
+    assert personal.splitlines()[:2] == [
+        "Memory: personal:user_x.md · Truthness: unset · Validity: not scored (personal)",
+        "",
     ]
-    assert personal.splitlines()[1:4] == ["Truthness: source unset", "Validity: not scored (personal memory)", ""]
 
 
 def test_a_memory_added_after_todays_scores_is_scored_when_it_returns(
@@ -246,6 +247,6 @@ def test_a_memory_added_after_todays_scores_is_scored_when_it_returns(
 
     note = client.post("/api/v1/memory/recall/frame", json=body, headers=trial).json()["context"]
 
-    assert note.splitlines()[1].startswith("Truthness: source inference;")
-    assert note.splitlines()[2].startswith("Validity: stale 0.00 (")
-    assert note.splitlines()[4] == "⚠ Weak truthness: it was inferred, not measured or decided by the user."
+    assert " · Truthness: inference; " in note.splitlines()[0]
+    assert " · Validity: stale 0.00, " in note.splitlines()[0]
+    assert note.splitlines()[2] == "⚠ Weak truthness: it was inferred, not measured or decided by the user."

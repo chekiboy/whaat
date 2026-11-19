@@ -403,3 +403,25 @@
   color: var(--muted);
   font-weight: 600;
 }
+
+/* the sessions list: the label carries the session id and can be selected; the documents sit on the line */
+.mem-row.ses {
+  grid-template-columns: 136px minmax(0, 1fr) minmax(0, 40%) 48px;
+  cursor: default;
+}
+.mem-row.ses .mem-type {
+  text-transform: none;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+.mem-row .ses-docs {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+.mem-row .ses-docs .mem-chip:hover {
+  border-color: var(--yellow);
+  color: var(--cream);
+}

@@ -115,6 +115,13 @@ def state_of(report: ReportFile) -> ReportState:
     return "applied" if report.companion(SENT_SUFFIX).exists() else "done"
 
 
+def _unanswered(text: str) -> bool:
+    try:
+        return not json.loads(text)["body"].get("sent_at")
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return False
+
+
 def _newest_first(summary: ReportSummary) -> tuple[date, str]:
     return summary.envelope.created_date or date.min, summary.id
 
@@ -171,7 +178,7 @@ class ReportService:
             envelope=envelope,
             envelope_source=source,
             private=private,
-            state=state_of(report),
+            state="waiting" if envelope.kind == "decisions" and _unanswered(text) else state_of(report),
             warnings=warnings + privacy_warnings,
         )
 

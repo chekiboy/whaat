@@ -4472,7 +4472,8 @@
           "state": {
             "enum": [
               "done",
-              "applied"
+              "applied",
+              "waiting"
             ],
             "title": "State",
             "type": "string"
@@ -4575,7 +4576,8 @@
           "state": {
             "enum": [
               "done",
-              "applied"
+              "applied",
+              "waiting"
             ],
             "title": "State",
             "type": "string"

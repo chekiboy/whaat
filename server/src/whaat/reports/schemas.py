@@ -9,7 +9,8 @@ from whaat.reports.types.journal import JournalContent
 from whaat.reports.types.memory_curation import CurationReportContent
 from whaat.reports.types.session_report import SessionReportContent
 
-ReportState = Literal["done", "applied"]
+# waiting: a decisions page the user has not answered yet
+ReportState = Literal["done", "applied", "waiting"]
 EnvelopeSource = Literal["meta", "embedded", "derived"]
 
 

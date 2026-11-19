@@ -2803,7 +2803,7 @@ export type ReportDetail = {
     /**
      * State
      */
-    state: 'done' | 'applied';
+    state: 'done' | 'applied' | 'waiting';
     /**
      * Warnings
      */
@@ -2874,7 +2874,7 @@ export type ReportSummary = {
     /**
      * State
      */
-    state: 'done' | 'applied';
+    state: 'done' | 'applied' | 'waiting';
     /**
      * Warnings
      */

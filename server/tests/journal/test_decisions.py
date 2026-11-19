@@ -126,3 +126,12 @@ def test_a_page_whose_options_repeat_or_recommend_twice_is_refused(client: TestC
 
     assert save(client, {**PAGE, "rows": [twice]}).status_code == 422
     assert save(client, {**PAGE, "rows": [repeated]}).status_code == 422
+
+
+def test_the_list_shows_a_page_as_waiting_until_it_is_answered(client: TestClient) -> None:
+    report_id = save(client).json()["report_id"]
+    before = client.get("/api/v1/reports", params={"kind": "decisions"}, headers=AUTH).json()[0]["state"]
+    answer(client, report_id, [{"n": 1, "choice": "accept"}])
+    after = client.get("/api/v1/reports", params={"kind": "decisions"}, headers=AUTH).json()[0]["state"]
+
+    assert (before, after) == ("waiting", "done")

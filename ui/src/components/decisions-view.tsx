@@ -78,7 +78,7 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
       </nav>
       <div className={`verdict sh-paper ${sent ? "v-green" : "v-amber"}`}>
         <div className="vhead">
-          <span className="vlabel">{t("decisions.state")}</span>
+          <span className="vlabel">{t("decisions.stateLabel")}</span>
           <span className="vtext">{sent ? t("decisions.sent") : t("decisions.waiting")}</span>
           <span className="vsub">{stateLine}</span>
         </div>

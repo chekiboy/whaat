@@ -522,7 +522,11 @@ export const hu = {
   },
   decisions: {
     title: "Döntések",
-    state: "Állapot",
+    stateLabel: "Állapot",
+    thisSession: "Ez a session",
+    sessionWaiting: "döntés vár",
+    noSessions: "Nincs ilyen session.",
+    sessionState: { waiting: "vár", finished: "befejezett", running: "fut" },
     waiting: "Vár",
     sent: "Elküldve",
     waitingLine: "A session a válaszodra vár.",

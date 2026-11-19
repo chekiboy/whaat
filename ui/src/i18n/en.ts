@@ -521,7 +521,11 @@ export const en = {
   },
   decisions: {
     title: "Decisions",
-    state: "State",
+    stateLabel: "State",
+    thisSession: "This session",
+    sessionWaiting: "decision waiting",
+    noSessions: "No session matches.",
+    sessionState: { waiting: "waiting", finished: "finished", running: "running" },
     waiting: "Waiting",
     sent: "Sent",
     waitingLine: "The session waits for your answer.",

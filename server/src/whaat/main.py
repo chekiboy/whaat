@@ -6,7 +6,6 @@ from fastapi.routing import APIRoute
 from whaat import __version__
 from whaat.config import Settings
 from whaat.curation.router import router as curation_router
-from whaat.decisions.router import router as decisions_router
 from whaat.git import GitCommitter
 from whaat.health.router import code_commit
 from whaat.health.router import router as health_router
@@ -74,7 +73,6 @@ def create_app(settings: Settings, token: str) -> FastAPI:
     app.include_router(journal_router)
     app.include_router(memory_router)
     app.include_router(curation_router)
-    app.include_router(decisions_router)
     app.include_router(terminal_router)
     app.include_router(preferences_router)
     app.include_router(ui_router)

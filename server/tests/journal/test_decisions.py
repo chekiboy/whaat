@@ -44,7 +44,7 @@ def save(client: TestClient, page: dict[str, Any] = PAGE) -> Any:
 
 
 def answer(client: TestClient, report_id: str, rows: list[dict[str, Any]]) -> Any:
-    return client.post("/api/v1/decisions/answer", json={"report_id": report_id, "rows": rows}, headers=ADMIN)
+    return client.post(f"/api/v1/reports/{report_id}/answer", json={"rows": rows}, headers=ADMIN)
 
 
 def collect(client: TestClient, report_id: str, headers: dict[str, str] = AUTH) -> Any:
@@ -92,17 +92,6 @@ def test_a_row_with_no_recommendation_is_never_marked_as_off_it(client: TestClie
     assert collect(client, report_id).json()["text"].splitlines()[3] == "3. one"
 
 
-def test_the_first_collection_is_stamped_so_the_page_can_say_the_session_has_it(client: TestClient) -> None:
-    report_id = save(client).json()["report_id"]
-    answer(client, report_id, [{"n": 1, "choice": "accept"}])
-
-    collect(client, report_id)
-    page = client.get(f"/api/v1/reports/{report_id}", headers=AUTH).json()["body"]["report"]
-
-    assert page["sent_at"] is not None
-    assert page["collected_at"] is not None
-
-
 def test_an_answer_is_sent_once_and_the_answered_page_cannot_be_replaced(client: TestClient) -> None:
     report_id = save(client).json()["report_id"]
     answer(client, report_id, [{"n": 1, "choice": "accept"}])
@@ -123,7 +112,7 @@ def test_only_the_admin_answers_and_only_the_page_owner_collects(client: TestCli
     report_id = save(client).json()["report_id"]
 
     by_agent = client.post(
-        "/api/v1/decisions/answer", json={"report_id": report_id, "rows": [{"n": 1, "choice": "accept"}]}, headers=AUTH
+        f"/api/v1/reports/{report_id}/answer", json={"rows": [{"n": 1, "choice": "accept"}]}, headers=AUTH
     )
     elsewhere = collect(client, report_id.replace("decisions/", "memory-curation/"))
 

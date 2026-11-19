@@ -130,8 +130,7 @@ class DecisionAnswer(Strict):
     note: str | None = None
 
 
-class DecisionsAnswerCall(Strict):
-    report_id: str
+class DecisionsAnswer(Strict):
     rows: list[DecisionAnswer] = Field(min_length=1, description="The rows the user decided; the rest stay open.")
 
 

@@ -54,7 +54,6 @@ WRITER = "whaat:journal"
 DECISIONS_WRITER = "whaat:decisions"
 DECISIONS_SAVE_MESSAGE = "decisions: {name}"
 DECISIONS_ANSWER_MESSAGE = "decisions: answered, {name}"
-DECISIONS_COLLECT_MESSAGE = "decisions: collected by the session, {name}"
 NOT_A_REPOSITORY_WARNING = "the private folder of {identity} is not a git repository; it is not committed"
 SEVERAL_REPORTS_WARNING = "session {session} has several reports; {name} was overwritten"
 
@@ -255,23 +254,12 @@ class JournalService:
         return commit, warnings
 
     def collect_decisions(self, report_id: str, identity: str) -> DecisionsCollected:
-        """What the waiting session reads: nothing until the user sent the answer; then the answer as lines, and the
-        first collection is stamped, so the page can say the session has it."""
-        root, report = self._decisions_page(report_id, identity)
-        with self._lock:
-            document = self._decisions_document(report)
-            body = document.body
-            if not body.sent_at:
-                return DecisionsCollected(sent=False, sent_at=None, text=None)
-            if not body.collected_at:
-                stamped = body.model_copy(update={"collected_at": self._now().strftime("%Y-%m-%d %H:%M")})
-                self._store.write(root.path, report.path, DecisionsDocument(envelope=document.envelope, body=stamped))
-                self._commit(root, report.path, DECISIONS_COLLECT_MESSAGE.format(name=report.path.name), [])
-        return DecisionsCollected(sent=True, sent_at=body.sent_at, text=_answer_text(report, document))
-
-    def decisions_document(self, report_id: str) -> tuple[str, DecisionsDocument]:
-        root, report = self._decisions_page(report_id, None)
-        return root.identity or "", self._decisions_document(report)
+        """What the waiting session reads: nothing until the user sent the answer, then the answer as lines."""
+        _, report = self._decisions_page(report_id, identity)
+        document = self._decisions_document(report)
+        if not document.body.sent_at:
+            return DecisionsCollected(sent=False, sent_at=None, text=None)
+        return DecisionsCollected(sent=True, sent_at=document.body.sent_at, text=_answer_text(report, document))
 
     def _decisions_page(self, report_id: str, identity: str | None) -> tuple[Root, ReportFile]:
         root_key, _, rel = report_id.partition(":")

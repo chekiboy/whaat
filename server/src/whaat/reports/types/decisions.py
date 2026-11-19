@@ -1,10 +1,10 @@
 """A decisions page: questions an agent session puts to the user, each with its options and a recommended one. The
-user answers on the page; the waiting session collects the answer. The agent writes the questions only: the choice,
+user answers on the page; the waiting session reads the answer. The agent writes the questions only: the choice,
 the note and the stamps are written by whaat."""
 
 from typing import Annotated, Literal
 
-from pydantic import Field, StringConstraints, field_validator, model_validator
+from pydantic import Field, StringConstraints, field_validator
 
 from whaat.reports.types.base import Strict
 from whaat.reports.types.journal import BODY_VERSION
@@ -61,14 +61,6 @@ class DecisionsBody(DecisionsBodyIn):
     v: int = BODY_VERSION
     rows: list[DecisionRow] = Field(min_length=1)  # type: ignore[assignment]
     sent_at: str | None = Field(default=None, description="Set by whaat: when the user sent the answer.")
-    collected_at: str | None = Field(default=None, description="Set by whaat: when the waiting session collected it.")
-
-    @model_validator(mode="after")
-    def _choices_are_options(self) -> "DecisionsBody":
-        for row in self.rows:
-            if row.choice is not None and row.choice not in {option.value for option in row.options}:
-                raise ValueError(f"row {row.n}: {row.choice!r} is not one of its options")
-        return self
 
 
 class DecisionsContent(Strict):

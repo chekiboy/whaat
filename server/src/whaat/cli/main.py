@@ -727,17 +727,6 @@ def _collect(settings: Settings, report_id: str, token: str) -> dict[str, Any]:
     return collected
 
 
-@decisions_app.command("read")
-def read_decisions(report: ReportOption) -> None:
-    """Print the user's answer, one line per row; says so and exits 2 while the page is not answered yet."""
-    settings = load_settings()
-    collected = _collect(settings, report, _identity_token(settings))
-    if not collected["sent"]:
-        typer.echo("not answered yet", err=True)
-        raise typer.Exit(2)
-    typer.echo(collected["text"])
-
-
 @decisions_app.command("wait")
 def wait_for_decisions(
     report: ReportOption,

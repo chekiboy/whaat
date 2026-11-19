@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCanGoBack, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { DecisionsBody } from "@/client";
-import { answerMutation } from "@/client/@tanstack/react-query.gen";
+import { answerDecisionsMutation } from "@/client/@tanstack/react-query.gen";
 import { Markdown } from "@/components/curation/markdown";
 import { Panel } from "@/components/report-frame";
 import { useTranslation } from "@/i18n";
@@ -19,8 +19,8 @@ function kindOf(row: Row, pick: Pick): Exclude<Tile, "all"> {
   return !recommended || recommended.value === choice ? "du" : "df";
 }
 
-/** The decisions page: the summary, then one card per question. Once sent the page is read-only; the session collects
-    the answer itself, and the page then goes back to where the user came from. */
+/** The decisions page: the summary, then one card per question. Once sent the page is read-only; the waiting session
+    reads the answer itself, and the page goes back to where the user came from. */
 export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportId: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -28,7 +28,7 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
   const canGoBack = useCanGoBack();
   const [picks, setPicks] = useState<Record<number, Pick>>({});
   const [tile, setTile] = useState<Tile>("all");
-  const send = useMutation({ ...answerMutation() });
+  const send = useMutation({ ...answerDecisionsMutation() });
   const sent = Boolean(body.sent_at);
   const pickOf = (row: Row): Pick => picks[row.n] ?? {};
   const set = (n: number, pick: Pick) => setPicks((all) => ({ ...all, [n]: { ...all[n], ...pick } }));
@@ -55,8 +55,8 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
   const submit = () =>
     send.mutate(
       {
+        path: { report_id: reportId },
         body: {
-          report_id: reportId,
           rows: chosen.map((row) => ({ n: row.n, choice: pickOf(row).choice ?? "", note: pickOf(row).note ?? null })),
         },
       },
@@ -68,11 +68,7 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
       },
     );
 
-  const stateLine = !sent
-    ? t("decisions.waitingLine")
-    : body.collected_at
-      ? t("decisions.collectedLine", { at: body.sent_at ?? "", collected: body.collected_at })
-      : t("decisions.sentLine", { at: body.sent_at ?? "" });
+  const stateLine = sent ? t("decisions.sentLine", { at: body.sent_at ?? "" }) : t("decisions.waitingLine");
 
   return (
     <>

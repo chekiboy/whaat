@@ -3,11 +3,20 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from whaat.identities.registry import Principal
+from whaat.journal.exceptions import (
+    DecisionsAlreadySentError,
+    DecisionsNotFoundError,
+    InvalidAnswerError,
+    InvalidStoredDocumentError,
+)
+from whaat.journal.schemas import CurationRowsSaved, DecisionsAnswer
+from whaat.journal.service import JournalService
 from whaat.reports.exceptions import ReportNotFoundError
 from whaat.reports.schemas import ReportDetail, ReportOpened, ReportSummary
 from whaat.reports.service import ReportService
 from whaat.reports.store import FileReportStore, report_key
-from whaat.security import PrincipalDep
+from whaat.security import PrincipalDep, require_admin
 
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
@@ -53,6 +62,23 @@ def open_report(report_id: str, request: Request, service: ReportServiceDep) -> 
     except (OSError, subprocess.CalledProcessError) as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"could not open {url}: {err}") from err
     return ReportOpened(url=url)
+
+
+@router.post("/{report_id:path}/answer", response_model=CurationRowsSaved)
+def answer_decisions(
+    report_id: str, body: DecisionsAnswer, request: Request, _: Annotated[Principal, Depends(require_admin)]
+) -> CurationRowsSaved:
+    """The user's answer on a decisions page: each named row's choice and note, and the page's sent stamp; once."""
+    journal: JournalService = request.app.state.journal_service
+    try:
+        commit, warnings = journal.answer_decisions(report_id, body.rows)
+    except DecisionsNotFoundError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err)) from err
+    except (DecisionsAlreadySentError, InvalidStoredDocumentError) as err:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err)) from err
+    except InvalidAnswerError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(err)) from err
+    return CurationRowsSaved(commit=commit, warnings=warnings)
 
 
 @router.get("/{report_id:path}", response_model=ReportDetail)

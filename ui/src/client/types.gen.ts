@@ -5,20 +5,6 @@ export type ClientOptions = {
 };
 
 /**
- * AnswerSaved
- */
-export type AnswerSaved = {
-    /**
-     * Commit
-     */
-    commit: string | null;
-    /**
-     * Warnings
-     */
-    warnings: Array<string>;
-};
-
-/**
  * CardValidity
  *
  * A memory's entry in memory-validity.json: a score, level and age, or the memory that superseded it.
@@ -572,13 +558,9 @@ export type DecisionRowIn = {
 };
 
 /**
- * DecisionsAnswerCall
+ * DecisionsAnswer
  */
-export type DecisionsAnswerCall = {
-    /**
-     * Report Id
-     */
-    report_id: string;
+export type DecisionsAnswer = {
     /**
      * Rows
      *
@@ -597,12 +579,6 @@ export type DecisionsBody = {
      * The step that asks, e.g. `implement-task · phase 3`.
      */
     asked_by?: string | null;
-    /**
-     * Collected At
-     *
-     * Set by whaat: when the waiting session collected it.
-     */
-    collected_at?: string | null;
     /**
      * Rows
      */
@@ -3961,31 +3937,6 @@ export type CurationPageResponses = {
 
 export type CurationPageResponse = CurationPageResponses[keyof CurationPageResponses];
 
-export type AnswerData = {
-    body: DecisionsAnswerCall;
-    path?: never;
-    query?: never;
-    url: '/api/v1/decisions/answer';
-};
-
-export type AnswerErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type AnswerError = AnswerErrors[keyof AnswerErrors];
-
-export type AnswerResponses = {
-    /**
-     * Successful Response
-     */
-    200: AnswerSaved;
-};
-
-export type AnswerResponse = AnswerResponses[keyof AnswerResponses];
-
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -5324,6 +5275,36 @@ export type GetReportResponses = {
 };
 
 export type GetReportResponse = GetReportResponses[keyof GetReportResponses];
+
+export type AnswerDecisionsData = {
+    body: DecisionsAnswer;
+    path: {
+        /**
+         * Report Id
+         */
+        report_id: string;
+    };
+    query?: never;
+    url: '/api/v1/reports/{report_id}/answer';
+};
+
+export type AnswerDecisionsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AnswerDecisionsError = AnswerDecisionsErrors[keyof AnswerDecisionsErrors];
+
+export type AnswerDecisionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: CurationRowsSaved;
+};
+
+export type AnswerDecisionsResponse = AnswerDecisionsResponses[keyof AnswerDecisionsResponses];
 
 export type OpenReportData = {
     body?: never;

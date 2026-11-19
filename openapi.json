@@ -1,34 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AnswerSaved": {
-        "properties": {
-          "commit": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Commit"
-          },
-          "warnings": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Warnings",
-            "type": "array"
-          }
-        },
-        "required": [
-          "commit",
-          "warnings"
-        ],
-        "title": "AnswerSaved",
-        "type": "object"
-      },
       "CardValidity": {
         "description": "A memory's entry in memory-validity.json: a score, level and age, or the memory that superseded it.",
         "properties": {
@@ -911,13 +883,9 @@
         "title": "DecisionRowIn",
         "type": "object"
       },
-      "DecisionsAnswerCall": {
+      "DecisionsAnswer": {
         "additionalProperties": false,
         "properties": {
-          "report_id": {
-            "title": "Report Id",
-            "type": "string"
-          },
           "rows": {
             "description": "The rows the user decided; the rest stay open.",
             "items": {
@@ -929,10 +897,9 @@
           }
         },
         "required": [
-          "report_id",
           "rows"
         ],
-        "title": "DecisionsAnswerCall",
+        "title": "DecisionsAnswer",
         "type": "object"
       },
       "DecisionsBody": {
@@ -949,18 +916,6 @@
             ],
             "description": "The step that asks, e.g. `implement-task \u00b7 phase 3`.",
             "title": "Asked By"
-          },
-          "collected_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Set by whaat: when the waiting session collected it.",
-            "title": "Collected At"
           },
           "rows": {
             "items": {
@@ -6406,53 +6361,6 @@
         ]
       }
     },
-    "/api/v1/decisions/answer": {
-      "post": {
-        "description": "Save the user's choice and note per row and stamp the page as sent; a page is answered once.",
-        "operationId": "answer",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DecisionsAnswerCall"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AnswerSaved"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "summary": "Answer",
-        "tags": [
-          "decisions"
-        ]
-      }
-    },
     "/api/v1/health": {
       "get": {
         "operationId": "get_health",
@@ -8900,6 +8808,64 @@
           }
         ],
         "summary": "Get Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{report_id}/answer": {
+      "post": {
+        "description": "The user's answer on a decisions page: each named row's choice and note, and the page's sent stamp; once.",
+        "operationId": "answer_decisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionsAnswer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurationRowsSaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Answer Decisions",
         "tags": [
           "reports"
         ]

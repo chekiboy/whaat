@@ -17,6 +17,7 @@ from whaat.reports.schemas import (
     ReportSummary,
 )
 from whaat.reports.store import ReportFile, ReportStore, report_key
+from whaat.reports.types.decisions import DecisionsBody, DecisionsContent
 from whaat.reports.types.journal import JournalBody, JournalContent
 from whaat.reports.types.markdown import parse_markdown
 from whaat.reports.types.memory_curation import CurationReportBody, CurationReportContent
@@ -35,6 +36,7 @@ WRITERS = {
     "memory-curation": "memory-curation",
     "session-report": "self-model-journal",
     "journal": "self-model-journal",
+    "decisions": "whaat:decisions",
 }
 DATE_IN_NAME = re.compile(r"(\d{4})-?(\d{2})-?(\d{2})")
 TICKET = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,10}-\d+)(?![A-Za-z0-9])")
@@ -54,6 +56,8 @@ def kind_of(report: ReportFile) -> str:
         return "session-report"
     if top_dir == "journal":
         return "journal"
+    if top_dir == "decisions":
+        return "decisions"
     return "markdown"
 
 
@@ -200,6 +204,8 @@ def content_of(report: ReportFile, kind: str, text: str) -> ReportContent:
             return SessionReportContent(report=SessionReportBody.model_validate(body))
         if kind == "memory-curation":
             return CurationReportContent(report=CurationReportBody.model_validate(body))
+        if kind == "decisions":
+            return DecisionsContent(report=DecisionsBody.model_validate(body))
     except (ValueError, KeyError, TypeError, ValidationError):
         pass
     return ReportBody(title=report.path.stem, pins=[], sections=[ReportSection(heading="JSON", level=2, markdown=text)])

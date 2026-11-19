@@ -9,6 +9,9 @@ from whaat.git import GitCommitError, GitCommitter
 from whaat.identities.registry import ADMIN, Principal
 from whaat.journal.exceptions import (
     CurationReportNotFoundError,
+    DecisionsAlreadySentError,
+    DecisionsNotFoundError,
+    InvalidAnswerError,
     InvalidStoredDocumentError,
     UndecidedRowsError,
     UnknownIdentityError,
@@ -19,17 +22,23 @@ from whaat.journal.schemas import (
     CurationDecision,
     CurationReport,
     CurationReportDocument,
+    DecisionAnswer,
+    DecisionsCollected,
+    DecisionsDocument,
+    DecisionsSave,
     JournalDocument,
     JournalEntry,
     SavedCurationReport,
+    SavedDecisions,
     SavedJournalEntry,
     SavedSessionReport,
     SessionReport,
     SessionReportDocument,
 )
-from whaat.journal.store import CURATION_DIR, Document, JournalStore
+from whaat.journal.store import CURATION_DIR, DECISIONS_DIR, Document, JournalStore
 from whaat.reports.schemas import Envelope
 from whaat.reports.store import ReportFile, Root
+from whaat.reports.types.decisions import DecisionRow, DecisionsBody
 from whaat.reports.types.journal import JournalBlock, JournalBody
 from whaat.reports.types.memory_curation import CurationReportBody
 from whaat.reports.types.session_report import SessionReportBody
@@ -42,6 +51,10 @@ DECISIONS_COMMIT_MESSAGE = "memory-curation: decisions on {name}"
 APPLIED_COMMIT_MESSAGE = "memory-curation: applied rows of {name}"
 SENT_COMMIT_MESSAGE = "memory-curation: rows sent to the session, {name}"
 WRITER = "whaat:journal"
+DECISIONS_WRITER = "whaat:decisions"
+DECISIONS_SAVE_MESSAGE = "decisions: {name}"
+DECISIONS_ANSWER_MESSAGE = "decisions: answered, {name}"
+DECISIONS_COLLECT_MESSAGE = "decisions: collected by the session, {name}"
 NOT_A_REPOSITORY_WARNING = "the private folder of {identity} is not a git repository; it is not committed"
 SEVERAL_REPORTS_WARNING = "session {session} has several reports; {name} was overwritten"
 
@@ -179,6 +192,101 @@ class JournalService:
         """Stamp rows as sent to the session at `at`, or empty the stamp (a revert was sent)."""
         self._update_curation_rows(report_id, None, {n: {"sent_at": at} for n in rows}, SENT_COMMIT_MESSAGE)
 
+    def save_decisions(self, page: DecisionsSave, identity: str) -> SavedDecisions:
+        """One page per session and slug: saving it again replaces the questions, until the user answered it."""
+        root = self._root_for(identity)
+        warnings: list[str] = []
+        now = self._now().replace(microsecond=0)
+        day = page.entry_date or now.date()
+        with self._lock:
+            report = ReportFile(root, self._store.decisions_path(root.path, day, page.session, page.slug))
+            previous = self._read(report, DecisionsDocument)
+            if previous is not None and previous.body.sent_at:
+                raise DecisionsAlreadySentError(report.id, previous.body.sent_at)
+            body = DecisionsBody(
+                **page.report.model_dump(exclude={"rows"}),
+                rows=[DecisionRow(**row.model_dump()) for row in page.report.rows],
+            )
+            envelope = Envelope(
+                kind="decisions",
+                title=body.title,
+                created_date=day,
+                created_at=previous.envelope.created_at if previous and previous.envelope.created_at else now,
+                session=page.session,
+                ticket=page.ticket,
+                writer=DECISIONS_WRITER,
+                identity=identity,
+                tags=list(dict.fromkeys([*(previous.envelope.tags if previous else []), *page.tags])),
+            )
+            self._store.write(root.path, report.path, DecisionsDocument(envelope=envelope, body=body))
+            commit = self._commit(root, report.path, DECISIONS_SAVE_MESSAGE.format(name=report.path.name), warnings)
+        return SavedDecisions(
+            report_id=report.id, replaced=previous is not None, commit=commit, envelope=envelope, warnings=warnings
+        )
+
+    def answer_decisions(self, report_id: str, answers: list[DecisionAnswer]) -> tuple[str | None, list[str]]:
+        """The user's answer from the page, sent once: each named row gets its choice and note, the page its stamp."""
+        root, report = self._decisions_page(report_id, None)
+        warnings: list[str] = []
+        with self._lock:
+            document = self._decisions_document(report)
+            if document.body.sent_at:
+                raise DecisionsAlreadySentError(report_id, document.body.sent_at)
+            given = {answer.n: answer for answer in answers}
+            rows = {row.n: row for row in document.body.rows}
+            unknown = sorted(set(given) - set(rows))
+            if unknown:
+                raise InvalidAnswerError(f"the page has no rows {', '.join(map(str, unknown))}")
+            for n, answer in given.items():
+                if answer.choice not in {option.value for option in rows[n].options}:
+                    raise InvalidAnswerError(f"row {n}: {answer.choice!r} is not one of its options")
+            updated = [
+                row.model_copy(
+                    update={"choice": given[row.n].choice, "note": (given[row.n].note or "").strip() or None}
+                )
+                if row.n in given
+                else row
+                for row in document.body.rows
+            ]
+            at = self._now().strftime("%Y-%m-%d %H:%M")
+            body = document.body.model_copy(update={"rows": updated, "sent_at": at})
+            self._store.write(root.path, report.path, DecisionsDocument(envelope=document.envelope, body=body))
+            commit = self._commit(root, report.path, DECISIONS_ANSWER_MESSAGE.format(name=report.path.name), warnings)
+        return commit, warnings
+
+    def collect_decisions(self, report_id: str, identity: str) -> DecisionsCollected:
+        """What the waiting session reads: nothing until the user sent the answer; then the answer as lines, and the
+        first collection is stamped, so the page can say the session has it."""
+        root, report = self._decisions_page(report_id, identity)
+        with self._lock:
+            document = self._decisions_document(report)
+            body = document.body
+            if not body.sent_at:
+                return DecisionsCollected(sent=False, sent_at=None, text=None)
+            if not body.collected_at:
+                stamped = body.model_copy(update={"collected_at": self._now().strftime("%Y-%m-%d %H:%M")})
+                self._store.write(root.path, report.path, DecisionsDocument(envelope=document.envelope, body=stamped))
+                self._commit(root, report.path, DECISIONS_COLLECT_MESSAGE.format(name=report.path.name), [])
+        return DecisionsCollected(sent=True, sent_at=body.sent_at, text=_answer_text(report, document))
+
+    def decisions_document(self, report_id: str) -> tuple[str, DecisionsDocument]:
+        root, report = self._decisions_page(report_id, None)
+        return root.identity or "", self._decisions_document(report)
+
+    def _decisions_page(self, report_id: str, identity: str | None) -> tuple[Root, ReportFile]:
+        root_key, _, rel = report_id.partition(":")
+        principal = ADMIN if identity is None else Principal(identity)
+        root = next((r for r in self._roots_for(principal) if r.key == root_key and r.identity), None)
+        if root is None or not rel.startswith(DECISIONS_DIR + "/") or ".." in Path(rel).parts:
+            raise DecisionsNotFoundError(report_id)
+        return root, ReportFile(root, root.path / rel)
+
+    def _decisions_document(self, report: ReportFile) -> DecisionsDocument:
+        document = self._read(report, DecisionsDocument)
+        if document is None:
+            raise DecisionsNotFoundError(report.id)
+        return document
+
     def _curation_report(self, report_id: str, identity: str | None) -> tuple[Root, ReportFile]:
         root_key, _, rel = report_id.partition(":")
         principal = ADMIN if identity is None else Principal(identity)
@@ -263,3 +371,18 @@ class JournalService:
         except GitCommitError as err:
             warnings.append(f"saved but not committed: {err}")
             return None
+
+
+def _answer_text(report: ReportFile, document: DecisionsDocument) -> str:
+    """One line per row, in the page's order: the chosen value, marked when it is not the recommended one, and the
+    note; an open row is `—`. Machine text for the session, the same in every UI language."""
+    session = document.envelope.session or "?"
+    lines = [f"decisions {report.path.stem} (session {session}): sent {document.body.sent_at}"]
+    for row in document.body.rows:
+        if row.choice is None:
+            lines.append(f"{row.n}. —")
+            continue
+        chosen = next(option for option in row.options if option.value == row.choice)
+        off = "" if chosen.recommended or not any(o.recommended for o in row.options) else " (not the recommended)"
+        lines.append(f"{row.n}. {row.choice}{off}" + (f" — {row.note}" if row.note else ""))
+    return "\n".join(lines)

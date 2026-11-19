@@ -519,6 +519,24 @@ export const en = {
       ended: "Session ended",
     },
   },
+  decisions: {
+    title: "Decisions",
+    state: "State",
+    waiting: "Waiting",
+    sent: "Sent",
+    waitingLine: "The session waits for your answer.",
+    sentLine: "Sent {{at}}. The session has not read it yet.",
+    collectedLine: "Sent {{at}}. The session read it at {{collected}}.",
+    summary: "Summary",
+    allRecommended: "All recommended",
+    recommended: "recommended",
+    asRecommended: "As recommended",
+    offRecommended: "Not the recommended",
+    options: "Options",
+    noDecision: "no decision",
+    optional: "optional",
+    sendFailed: "Could not send: {{error}}",
+  },
   reports: {
     title: "Reports",
     loading: "Loading reports…",
@@ -554,6 +572,11 @@ export const en = {
       "session-report": {
         label: "Session report",
         description: "What one working session did, decided and learned.",
+      },
+      decisions: {
+        label: "Decisions",
+        description:
+          "Questions a session put to the user, each with its options and a recommended one, answered on the page.",
       },
       journal: {
         label: "Journal",

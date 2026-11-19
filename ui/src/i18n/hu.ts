@@ -520,6 +520,24 @@ export const hu = {
       ended: "A session véget ért",
     },
   },
+  decisions: {
+    title: "Döntések",
+    state: "Állapot",
+    waiting: "Vár",
+    sent: "Elküldve",
+    waitingLine: "A session a válaszodra vár.",
+    sentLine: "Elküldve: {{at}}. A session még nem olvasta.",
+    collectedLine: "Elküldve: {{at}}. A session elolvasta: {{collected}}.",
+    summary: "Összefoglaló",
+    allRecommended: "Mind az ajánlott",
+    recommended: "ajánlott",
+    asRecommended: "Ajánlott szerint",
+    offRecommended: "Eltér az ajánlottól",
+    options: "Opciók",
+    noDecision: "nincs döntés",
+    optional: "opcionális",
+    sendFailed: "Nem sikerült elküldeni: {{error}}",
+  },
   reports: {
     title: "Riportok",
     loading: "A riportok töltődnek…",
@@ -555,6 +573,11 @@ export const hu = {
       "session-report": {
         label: "Session-riport",
         description: "Mit csinált, mit döntött és mit tanult egy munkasession.",
+      },
+      decisions: {
+        label: "Döntések",
+        description:
+          "Kérdések, amelyeket egy session tett fel a felhasználónak, opciókkal és egy ajánlottal; az oldalon dől el.",
       },
       journal: {
         label: "Napló",

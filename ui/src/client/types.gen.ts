@@ -5,6 +5,20 @@ export type ClientOptions = {
 };
 
 /**
+ * AnswerSaved
+ */
+export type AnswerSaved = {
+    /**
+     * Commit
+     */
+    commit: string | null;
+    /**
+     * Warnings
+     */
+    warnings: Array<string>;
+};
+
+/**
  * CardValidity
  *
  * A memory's entry in memory-validity.json: a score, level and age, or the memory that superseded it.
@@ -450,6 +464,28 @@ export type Decision = {
 };
 
 /**
+ * DecisionAnswer
+ */
+export type DecisionAnswer = {
+    /**
+     * Choice
+     *
+     * The chosen option's value.
+     */
+    choice: string;
+    /**
+     * N
+     *
+     * The row's number.
+     */
+    n: number;
+    /**
+     * Note
+     */
+    note?: string | null;
+};
+
+/**
  * DecisionOption
  */
 export type DecisionOption = {
@@ -469,6 +505,262 @@ export type DecisionOption = {
      * The option, with what it gives and what it costs.
      */
     text: string;
+};
+
+/**
+ * DecisionRow
+ */
+export type DecisionRow = {
+    /**
+     * Choice
+     *
+     * Set by whaat: the chosen option's value.
+     */
+    choice?: string | null;
+    /**
+     * Explain
+     *
+     * What the user needs to decide well, as markdown: what, why, the cost.
+     */
+    explain: string;
+    /**
+     * N
+     *
+     * The row's number; the answer names rows by it.
+     */
+    n: number;
+    /**
+     * Note
+     *
+     * Set by whaat: the user's note on the row.
+     */
+    note?: string | null;
+    /**
+     * Options
+     */
+    options: Array<DecisionsOption>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * DecisionRowIn
+ */
+export type DecisionRowIn = {
+    /**
+     * Explain
+     *
+     * What the user needs to decide well, as markdown: what, why, the cost.
+     */
+    explain: string;
+    /**
+     * N
+     *
+     * The row's number; the answer names rows by it.
+     */
+    n: number;
+    /**
+     * Options
+     */
+    options: Array<DecisionsOption>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * DecisionsAnswerCall
+ */
+export type DecisionsAnswerCall = {
+    /**
+     * Report Id
+     */
+    report_id: string;
+    /**
+     * Rows
+     *
+     * The rows the user decided; the rest stay open.
+     */
+    rows: Array<DecisionAnswer>;
+};
+
+/**
+ * DecisionsBody
+ */
+export type DecisionsBody = {
+    /**
+     * Asked By
+     *
+     * The step that asks, e.g. `implement-task · phase 3`.
+     */
+    asked_by?: string | null;
+    /**
+     * Collected At
+     *
+     * Set by whaat: when the waiting session collected it.
+     */
+    collected_at?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<DecisionRow>;
+    /**
+     * Sent At
+     *
+     * Set by whaat: when the user sent the answer.
+     */
+    sent_at?: string | null;
+    /**
+     * Summary
+     *
+     * What the user should know before deciding, as markdown (tables allowed).
+     */
+    summary: string;
+    /**
+     * Title
+     *
+     * What the page decides, e.g. `ABC-101 · phase 3 gate`.
+     */
+    title: string;
+    /**
+     * V
+     */
+    v?: number;
+};
+
+/**
+ * DecisionsBodyIn
+ */
+export type DecisionsBodyIn = {
+    /**
+     * Asked By
+     *
+     * The step that asks, e.g. `implement-task · phase 3`.
+     */
+    asked_by?: string | null;
+    /**
+     * Rows
+     */
+    rows: Array<DecisionRowIn>;
+    /**
+     * Summary
+     *
+     * What the user should know before deciding, as markdown (tables allowed).
+     */
+    summary: string;
+    /**
+     * Title
+     *
+     * What the page decides, e.g. `ABC-101 · phase 3 gate`.
+     */
+    title: string;
+};
+
+/**
+ * DecisionsCollectCall
+ */
+export type DecisionsCollectCall = {
+    /**
+     * Report Id
+     */
+    report_id: string;
+};
+
+/**
+ * DecisionsCollected
+ */
+export type DecisionsCollected = {
+    /**
+     * Sent
+     *
+     * False while the user has not answered yet.
+     */
+    sent: boolean;
+    /**
+     * Sent At
+     */
+    sent_at: string | null;
+    /**
+     * Text
+     *
+     * The answer as the session reads it: one line per row; null until sent.
+     */
+    text: string | null;
+};
+
+/**
+ * DecisionsContent
+ */
+export type DecisionsContent = {
+    /**
+     * Format
+     */
+    format?: 'decisions';
+    report: DecisionsBody;
+};
+
+/**
+ * DecisionsOption
+ */
+export type DecisionsOption = {
+    /**
+     * Label
+     *
+     * The option as the user reads it.
+     */
+    label: string;
+    /**
+     * Recommended
+     *
+     * The option the agent recommends; at most one per row.
+     */
+    recommended?: boolean;
+    /**
+     * Value
+     *
+     * What the session reads back when this option is chosen, e.g. `apply`.
+     */
+    value: string;
+    /**
+     * Why
+     *
+     * A word on why it is recommended, e.g. `KISS`; optional.
+     */
+    why?: string | null;
+};
+
+/**
+ * DecisionsSave
+ */
+export type DecisionsSave = {
+    /**
+     * Entry Date
+     */
+    entry_date?: string | null;
+    report: DecisionsBodyIn;
+    /**
+     * Session
+     */
+    session: string;
+    /**
+     * Slug
+     *
+     * A few words naming the page within the session; saving the same slug again replaces it.
+     */
+    slug: string;
+    /**
+     * Tags
+     */
+    tags?: Array<string>;
+    /**
+     * Ticket
+     *
+     * The ticket the decisions are about, if any.
+     */
+    ticket?: string | null;
 };
 
 /**
@@ -2502,7 +2794,9 @@ export type ReportDetail = {
         format: 'session-report';
     } & SessionReportContent) | ({
         format: 'memory-curation';
-    } & CurationReportContent);
+    } & CurationReportContent) | ({
+        format: 'decisions';
+    } & DecisionsContent);
     envelope: Envelope;
     /**
      * Envelope Source
@@ -2739,6 +3033,29 @@ export type RunState = {
  * SavedCurationReport
  */
 export type SavedCurationReport = {
+    /**
+     * Commit
+     */
+    commit: string | null;
+    envelope: Envelope;
+    /**
+     * Replaced
+     */
+    replaced: boolean;
+    /**
+     * Report Id
+     */
+    report_id: string;
+    /**
+     * Warnings
+     */
+    warnings: Array<string>;
+};
+
+/**
+ * SavedDecisions
+ */
+export type SavedDecisions = {
     /**
      * Commit
      */
@@ -3644,6 +3961,31 @@ export type CurationPageResponses = {
 
 export type CurationPageResponse = CurationPageResponses[keyof CurationPageResponses];
 
+export type AnswerData = {
+    body: DecisionsAnswerCall;
+    path?: never;
+    query?: never;
+    url: '/api/v1/decisions/answer';
+};
+
+export type AnswerErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AnswerError = AnswerErrors[keyof AnswerErrors];
+
+export type AnswerResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnswerSaved;
+};
+
+export type AnswerResponse = AnswerResponses[keyof AnswerResponses];
+
 export type GetHealthData = {
     body?: never;
     path?: never;
@@ -3823,6 +4165,56 @@ export type SaveCurationAppliedResponses = {
 };
 
 export type SaveCurationAppliedResponse = SaveCurationAppliedResponses[keyof SaveCurationAppliedResponses];
+
+export type SaveDecisionsData = {
+    body: DecisionsSave;
+    path?: never;
+    query?: never;
+    url: '/api/v1/journal/decisions';
+};
+
+export type SaveDecisionsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SaveDecisionsError = SaveDecisionsErrors[keyof SaveDecisionsErrors];
+
+export type SaveDecisionsResponses = {
+    /**
+     * Successful Response
+     */
+    201: SavedDecisions;
+};
+
+export type SaveDecisionsResponse = SaveDecisionsResponses[keyof SaveDecisionsResponses];
+
+export type CollectDecisionsData = {
+    body: DecisionsCollectCall;
+    path?: never;
+    query?: never;
+    url: '/api/v1/journal/decisions/collect';
+};
+
+export type CollectDecisionsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CollectDecisionsError = CollectDecisionsErrors[keyof CollectDecisionsErrors];
+
+export type CollectDecisionsResponses = {
+    /**
+     * Successful Response
+     */
+    200: DecisionsCollected;
+};
+
+export type CollectDecisionsResponse = CollectDecisionsResponses[keyof CollectDecisionsResponses];
 
 export type SaveJournalEntryData = {
     body: JournalEntry;

@@ -82,7 +82,6 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
           <span className="vtext">{sent ? t("decisions.sent") : t("decisions.waiting")}</span>
           <span className="vsub">{stateLine}</span>
         </div>
-        {body.asked_by && <p className="muted">{body.asked_by}</p>}
         {send.error && <p>{t("decisions.sendFailed", { error: JSON.stringify(send.error) })}</p>}
       </div>
       <div className="dash">

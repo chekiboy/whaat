@@ -133,7 +133,10 @@ function SessionRow({
   docName: (kind: string) => string;
 }) {
   const { t } = useTranslation();
-  const name = `${session.ticket ? `${session.ticket} · ` : ""}${session.title}`;
+  // a title that already starts with the ticket keeps it once; a decisions chip drops it, the line shows it
+  const bare = (title: string) =>
+    session.ticket && title.startsWith(`${session.ticket} · `) ? title.slice(session.ticket.length + 3) : title;
+  const name = `${session.ticket ? `${session.ticket} · ` : ""}${bare(session.title)}`;
   return (
     // a line is not a button: its label stays selectable, and its chips are buttons of their own
     // biome-ignore lint/a11y/useKeyWithClickEvents: the chips and the main document open from the keyboard too
@@ -161,7 +164,7 @@ function SessionRow({
             }}
           >
             <i style={{ background: doc.state === "waiting" ? COLOR.waiting : "var(--muted)" }} />
-            {doc.envelope.kind === "decisions" ? doc.envelope.title : docName(doc.envelope.kind)}
+            {doc.envelope.kind === "decisions" ? bare(doc.envelope.title) : docName(doc.envelope.kind)}
             {doc.state === "waiting" && <b>{t("decisions.sessionState.waiting")}</b>}
           </button>
         ))}

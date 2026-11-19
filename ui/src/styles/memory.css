@@ -405,6 +405,9 @@
 }
 
 /* the sessions list: the label carries the session id and can be selected; the documents sit on the line */
+.sh-main:has(> .mem-list) {
+  padding: 0;
+}
 .mem-row.ses {
   grid-template-columns: 136px minmax(0, 1fr) minmax(0, 40%) 48px;
   cursor: default;
@@ -417,9 +420,14 @@
 }
 .mem-row .ses-docs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   min-width: 0;
-  overflow: hidden;
+  padding: 4px 0;
+}
+.mem-row.ses {
+  height: auto;
+  min-height: 34px;
 }
 .mem-row .ses-docs .mem-chip:hover {
   border-color: var(--yellow);

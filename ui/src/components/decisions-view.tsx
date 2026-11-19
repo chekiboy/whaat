@@ -8,12 +8,16 @@ import { Panel } from "@/components/report-frame";
 import { useTranslation } from "@/i18n";
 
 type Row = DecisionsBody["rows"][number];
-type Pick = { choice?: string; note?: string };
+type RowAnswer = { choice?: string; note?: string };
 type Tile = "q" | "du" | "df" | "all";
+type Kind = Exclude<Tile, "all">;
 
-/** A row's state: open, decided as recommended, or decided against the recommendation (a row with none is "as"). */
-function kindOf(row: Row, pick: Pick): Exclude<Tile, "all"> {
-  const choice = pick.choice ?? row.choice;
+/** The option whaat adds to every row: talk it over before anything is decided. */
+const DISCUSS = "discuss";
+
+/** A row's state: open, decided as recommended (a row with no recommendation counts here), or anything else. */
+function kindOf(row: Row, answer: RowAnswer): Kind {
+  const choice = answer.choice ?? row.choice;
   if (!choice) return "q";
   const recommended = row.options.find((option) => option.recommended);
   return !recommended || recommended.value === choice ? "du" : "df";
@@ -26,24 +30,28 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
   const queryClient = useQueryClient();
   const router = useRouter();
   const canGoBack = useCanGoBack();
-  const [picks, setPicks] = useState<Record<number, Pick>>({});
+  const [answers, setAnswers] = useState<Record<number, RowAnswer>>({});
   const [tile, setTile] = useState<Tile>("all");
   const send = useMutation({ ...answerDecisionsMutation() });
   const sent = Boolean(body.sent_at);
-  const pickOf = (row: Row): Pick => picks[row.n] ?? {};
-  const set = (n: number, pick: Pick) => setPicks((all) => ({ ...all, [n]: { ...all[n], ...pick } }));
+  const answerOf = (row: Row): RowAnswer => answers[row.n] ?? {};
+  const set = (n: number, answer: RowAnswer) => setAnswers((all) => ({ ...all, [n]: { ...all[n], ...answer } }));
 
+  const kinds = new Map(body.rows.map((row) => [row.n, kindOf(row, answerOf(row))]));
   const counts = { q: 0, du: 0, df: 0 };
-  for (const row of body.rows) counts[kindOf(row, pickOf(row))]++;
-  const tiles: [Exclude<Tile, "all">, string][] = [
+  for (const kind of kinds.values()) counts[kind]++;
+  const tiles: [Kind, string][] = [
     ["q", t("curation.bar.open")],
     ["du", t("decisions.asRecommended")],
     ["df", t("decisions.offRecommended")],
   ];
-  const chosen = body.rows.filter((row) => pickOf(row).choice);
+  const chosen = body.rows.filter((row) => answerOf(row).choice);
+  const noteOnly = body.rows
+    .filter((row) => !answerOf(row).choice && answerOf(row).note?.trim())
+    .map((row) => `D-${row.n}`);
 
   const allRecommended = () =>
-    setPicks((all) => {
+    setAnswers((all) => {
       const next = { ...all };
       for (const row of body.rows) {
         const recommended = row.options.find((option) => option.recommended);
@@ -57,7 +65,11 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
       {
         path: { report_id: reportId },
         body: {
-          rows: chosen.map((row) => ({ n: row.n, choice: pickOf(row).choice ?? "", note: pickOf(row).note ?? null })),
+          rows: chosen.map((row) => ({
+            n: row.n,
+            choice: answerOf(row).choice ?? "",
+            note: answerOf(row).note ?? null,
+          })),
         },
       },
       {
@@ -69,6 +81,7 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
     );
 
   const stateLine = sent ? t("decisions.sentLine", { at: body.sent_at ?? "" }) : t("decisions.waitingLine");
+  const failure = send.error as { detail?: unknown } | null;
 
   return (
     <>
@@ -82,7 +95,13 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
           <span className="vtext">{sent ? t("decisions.sent") : t("decisions.waiting")}</span>
           <span className="vsub">{stateLine}</span>
         </div>
-        {send.error && <p>{t("decisions.sendFailed", { error: JSON.stringify(send.error) })}</p>}
+        {failure && (
+          <p>
+            {t("decisions.sendFailed", {
+              error: typeof failure.detail === "string" ? failure.detail : t("decisions.sendFailedUnknown"),
+            })}
+          </p>
+        )}
       </div>
       <div className="dash">
         <div className="tiles">
@@ -105,11 +124,16 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
             <button type="button" onClick={allRecommended}>
               ✔ {t("decisions.allRecommended")}
             </button>
-            <button type="button" disabled={chosen.length === 0 || send.isPending} onClick={submit}>
+            <button
+              type="button"
+              disabled={chosen.length === 0 || noteOnly.length > 0 || send.isPending}
+              onClick={submit}
+            >
               → {t("curation.bar.send")}
             </button>
           </div>
         )}
+        {!sent && noteOnly.length > 0 && <p>{t("decisions.noteWithoutChoice", { rows: noteOnly.join(", ") })}</p>}
       </div>
       <Panel id="summary" title={t("decisions.summary")} collapsible open>
         <Markdown text={body.summary} />
@@ -117,15 +141,15 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
       <Panel id="decisions" title={t("decisions.title")}>
         <div className="cards">
           {body.rows
-            .filter((row) => tile === "all" || kindOf(row, pickOf(row)) === tile)
+            .filter((row) => tile === "all" || kinds.get(row.n) === tile)
             .map((row) => (
               <DecisionCard
                 key={row.n}
                 row={row}
-                pick={pickOf(row)}
-                kind={kindOf(row, pickOf(row))}
+                answer={answerOf(row)}
+                kind={kinds.get(row.n) ?? "q"}
                 readOnly={sent}
-                onPick={(pick) => set(row.n, pick)}
+                onAnswer={(answer) => set(row.n, answer)}
               />
             ))}
         </div>
@@ -136,22 +160,25 @@ export function DecisionsView({ body, reportId }: { body: DecisionsBody; reportI
 
 function DecisionCard({
   row,
-  pick,
+  answer,
   kind,
   readOnly,
-  onPick,
+  onAnswer,
 }: {
   row: Row;
-  pick: Pick;
-  kind: Exclude<Tile, "all">;
+  answer: RowAnswer;
+  kind: Kind;
   readOnly: boolean;
-  onPick: (pick: Pick) => void;
+  onAnswer: (answer: RowAnswer) => void;
 }) {
   const { t } = useTranslation();
-  const choice = pick.choice ?? row.choice;
-  const chosen = row.options.find((option) => option.value === choice);
+  const choice = answer.choice ?? row.choice;
+  // open only at first: picking an option must not hide the note field
+  const [openAtFirst] = useState(!choice);
+  const options = [...row.options, { value: DISCUSS, label: t("decisions.discuss"), recommended: false, why: null }];
+  const chosen = options.find((option) => option.value === choice);
   return (
-    <details className={`card k-${kind}`} open={!choice}>
+    <details className={`card k-${kind}`} open={openAtFirst}>
       <summary>
         <span className="sev">D-{row.n}</span>
         <span className="ctitle">{row.title}</span>
@@ -162,13 +189,13 @@ function DecisionCard({
         <Markdown text={row.explain} />
         <h4>{t("decisions.options")}</h4>
         <ul className="options">
-          {row.options.map((option) => (
+          {options.map((option) => (
             <li key={option.value} className={choice && option.value !== choice ? "lost" : ""}>
               <button
                 type="button"
                 className="dc-option"
                 disabled={readOnly}
-                onClick={() => onPick({ choice: option.value })}
+                onClick={() => onAnswer({ choice: option.value })}
               >
                 <span>{option.value === choice ? "✔" : "·"}</span>
                 <span>
@@ -191,8 +218,8 @@ function DecisionCard({
           rows={2}
           placeholder={t("decisions.optional")}
           disabled={readOnly}
-          value={pick.note ?? row.note ?? ""}
-          onChange={(event) => onPick({ note: event.target.value })}
+          value={answer.note ?? row.note ?? ""}
+          onChange={(event) => onAnswer({ note: event.target.value })}
         />
       </div>
     </details>

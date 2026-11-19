@@ -527,7 +527,7 @@ export const hu = {
     thisSession: "Ez a session",
     sessionWaiting: "döntés vár",
     noSessions: "Nincs ilyen session.",
-    sessionState: { waiting: "vár", finished: "befejezett", running: "fut" },
+    sessionState: { waiting: "vár", finished: "befejezett", noReport: "nincs riport" },
     waiting: "Vár",
     sent: "Elküldve",
     waitingLine: "A session a válaszodra vár.",
@@ -540,6 +540,12 @@ export const hu = {
     options: "Opciók",
     noDecision: "nincs döntés",
     optional: "opcionális",
+    discuss: "Beszéljük meg",
+    noteWithoutChoice:
+      "{{rows}}: a megjegyzés egy opcióhoz tartozik. Válassz egyet (a megjegyzés felülírja), válaszd a Beszéljük meg-et, vagy töröld a megjegyzést.",
+    sendFailedUnknown: "a szerver nem mondta meg, miért",
+    noReportHint:
+      "Nincs riport: a session riport nélkül ért véget, vagy még fut. Abban a sessionben a /whaat:journal write-session-report megírja; egy véget ért session riportját egy másik session is megírhatja a transcriptjéből.",
     sendFailed: "Nem sikerült elküldeni: {{error}}",
   },
   reports: {

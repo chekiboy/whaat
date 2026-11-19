@@ -6,8 +6,9 @@ import { cardLevel, LEVEL_ORDER, nameOf, useMemoryLabels } from "@/components/me
 import { LEVEL_COLOUR } from "@/components/memory/memory-split";
 import { ModuleBar, ModuleBarSection } from "@/components/shell/module-bar";
 import { Skeleton } from "@/components/shell/skeleton";
-import { useLanguage, useTranslation } from "@/i18n";
+import { useTranslation } from "@/i18n";
 import { usePageHeading } from "@/lib/breadcrumb";
+import { useDayName } from "@/lib/day";
 import { usePersona } from "@/lib/persona";
 import { TERMINAL_COMMAND } from "@/lib/terminal";
 import "@/styles/overview.css";
@@ -24,15 +25,12 @@ const KIND: Record<string, [string, string]> = {
   "memory-curation": ["var(--stripe-violet)", "curation"],
   "session-report": ["var(--stripe-yellow)", "session"],
   journal: ["var(--stripe-red)", "journal"],
+  decisions: ["var(--stripe-orange)", "decisions"],
 };
 const MEMORY_EVENT: [string, string] = ["var(--phos)", "memory"];
 const TRANSLATED_KINDS = ["curation", "journal", "memory"] as const;
 
 type Event = { day: string; kind: string; title: string; sub: string; reportKey?: string; memory?: string };
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function kindOf(kind: string): [string, string] {
   return kind === "memory" ? MEMORY_EVENT : (KIND[kind] ?? ["var(--muted)", kind]);
@@ -43,14 +41,8 @@ function Home() {
   usePageHeading("Whaat?!");
   const { persona } = usePersona();
   const { t } = useTranslation();
-  const { language } = useLanguage();
   const labels = useMemoryLabels();
-  const dayName = (day: string) => {
-    const diff = Math.round((Date.parse(today()) - Date.parse(day)) / 864e5);
-    if (diff === 0) return t("home.today");
-    if (diff === 1) return t("home.yesterday");
-    return new Date(`${day}T12:00:00`).toLocaleDateString(language, { month: "short", day: "numeric" });
-  };
+  const dayName = useDayName();
   const kindLabel = (key: string) =>
     (TRANSLATED_KINDS as readonly string[]).includes(key)
       ? t(`home.kinds.${key as (typeof TRANSLATED_KINDS)[number]}`)

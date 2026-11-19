@@ -3,8 +3,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Fragment, useState } from "react";
 import { listReportsOptions } from "@/client/@tanstack/react-query.gen";
 import { ReportsModuleBar } from "@/components/reports-module-bar";
-import { useLanguage, useTranslation } from "@/i18n";
+import { useTranslation } from "@/i18n";
 import { sectionTitle, usePageHeading } from "@/lib/breadcrumb";
+import { useDayName } from "@/lib/day";
 import { useKindInfo } from "@/lib/report-kinds";
 import { groupSessions, type SessionGroup, type SessionState } from "@/lib/sessions";
 import "@/styles/memory.css";
@@ -18,14 +19,14 @@ type Filter = "all" | "waiting" | "finished";
 const COLOR: Record<SessionState, string> = {
   waiting: "var(--orange)",
   finished: "var(--teal)",
-  running: "var(--blue)",
+  noReport: "var(--blue)",
 };
 
 /** Every session that left a document, one dense line each, paged and filtered; a line opens the session's main
     document, a chip on it opens that document. */
 function SessionsPage() {
   const { t } = useTranslation();
-  const { language } = useLanguage();
+  const dayName = useDayName();
   const kindInfo = useKindInfo();
   const navigate = useNavigate();
   usePageHeading(sectionTitle("Reports"), [
@@ -44,12 +45,6 @@ function SessionsPage() {
   const part = shown.slice(page * PAGE, (page + 1) * PAGE);
   const open = (key: string) => navigate({ to: "/reports/$key", params: { key } });
 
-  const dayLabel = (day: string) => {
-    const days = Math.round((Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(day)) / 864e5);
-    if (days === 0) return t("home.today");
-    if (days === 1) return t("home.yesterday");
-    return new Date(day).toLocaleDateString(language, { month: "short", day: "numeric" });
-  };
   const chips: [Filter, string, string, number][] = [
     ["all", t("curation.bar.all"), "var(--cream2)", matching.length],
     ["waiting", t("decisions.sessionWaiting"), COLOR.waiting, matching.filter((s) => s.state === "waiting").length],
@@ -112,13 +107,14 @@ function SessionsPage() {
         <Fragment key={session.id}>
           {(index === 0 || part[index - 1]?.day !== session.day) && (
             <div className="mem-grp">
-              {dayLabel(session.day)}
-              <small>{part.filter((s) => s.day === session.day).length}</small>
+              {dayName(session.day)}
+              <small>{shown.filter((s) => s.day === session.day).length}</small>
             </div>
           )}
           <SessionRow session={session} onOpen={open} docName={(kind) => kindInfo(kind).label} />
         </Fragment>
       ))}
+      {part.some((s) => s.state === "noReport") && <p className="mem-none">{t("decisions.noReportHint")}</p>}
     </div>
   );
 }
@@ -133,7 +129,6 @@ function SessionRow({
   docName: (kind: string) => string;
 }) {
   const { t } = useTranslation();
-  // a title that already starts with the ticket keeps it once; a decisions chip drops it, the line shows it
   const bare = (title: string) =>
     session.ticket && title.startsWith(`${session.ticket} · `) ? title.slice(session.ticket.length + 3) : title;
   const name = `${session.ticket ? `${session.ticket} · ` : ""}${bare(session.title)}`;
@@ -145,7 +140,11 @@ function SessionRow({
       className={`mem-row ses${session.state === "waiting" ? " sel" : ""}`}
       onClick={() => !window.getSelection()?.toString() && onOpen(session.main.key)}
     >
-      <span className="mem-type" style={{ background: COLOR[session.state] }}>
+      <span
+        className="mem-type"
+        style={{ background: COLOR[session.state] }}
+        title={session.state === "noReport" ? t("decisions.noReportHint") : undefined}
+      >
         {session.id}:{t(`decisions.sessionState.${session.state}`)}
       </span>
       <span className="mem-t" title={name}>

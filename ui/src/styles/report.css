@@ -1134,7 +1134,6 @@
   text-decoration: none;
 }
 
-/* the decisions page: an option is a button inside the options list, a note spans the card */
 .rp .options .dc-option {
   display: inline-flex;
   gap: 8px;

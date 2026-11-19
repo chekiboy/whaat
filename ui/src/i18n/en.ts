@@ -519,6 +519,33 @@ export const en = {
       ended: "Session ended",
     },
   },
+  decisions: {
+    title: "Decisions",
+    stateLabel: "State",
+    pagesTitle: "Decision pages",
+    thisSession: "This session",
+    noSessions: "No session matches.",
+    sessionState: { waiting: "waiting", finished: "finished", noReport: "no report" },
+    waiting: "Waiting",
+    sent: "Sent",
+    waitingLine: "The session waits for your answer.",
+    sentLine: "Sent {{at}}.",
+    summary: "Summary",
+    allRecommended: "All recommended",
+    recommended: "recommended",
+    asRecommended: "As recommended",
+    offRecommended: "Not the recommended",
+    options: "Options",
+    noDecision: "no decision",
+    optional: "optional",
+    discuss: "Let's discuss it",
+    noteWithoutChoice:
+      "{{rows}}: a note goes with an option. Pick one (the note wins over it), choose Let's discuss it, or clear the note.",
+    sendFailedUnknown: "the server did not say why",
+    noReportHint:
+      "No report: the session ended without one, or is still running. In that session, /whaat:journal write-session-report writes it; a session that has ended can have it written from another session, from its transcript.",
+    sendFailed: "Could not send: {{error}}",
+  },
   reports: {
     title: "Reports",
     loading: "Loading reports…",
@@ -554,6 +581,11 @@ export const en = {
       "session-report": {
         label: "Session report",
         description: "What one working session did, decided and learned.",
+      },
+      decisions: {
+        label: "Decisions",
+        description:
+          "Questions a session put to the user, each with its options and a recommended one, answered on the page.",
       },
       journal: {
         label: "Journal",

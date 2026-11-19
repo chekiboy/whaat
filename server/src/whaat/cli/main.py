@@ -39,6 +39,11 @@ app.add_typer(journal_app, name="journal")
 identity_app = typer.Typer(help="Identities: each with its own folder and token.", no_args_is_help=True)
 app.add_typer(identity_app, name="identity")
 memory_app = typer.Typer(help="The calling identity's memory, layer by layer.", no_args_is_help=True)
+decisions_app = typer.Typer(
+    help="Decisions pages: questions for the user, answered on a page, read back by the asking session.",
+    no_args_is_help=True,
+)
+app.add_typer(decisions_app, name="decisions")
 app.add_typer(memory_app, name="memory")
 
 
@@ -684,3 +689,53 @@ def _object_from_stdin() -> dict[str, object]:
         typer.echo("stdin must be one JSON object", err=True)
         raise typer.Exit(1)
     return value
+
+
+DECISIONS_POLL_SECONDS = 3.0
+ReportOption = Annotated[str, typer.Option("--report", help="The decisions page's id, as `decisions save` prints it.")]
+
+
+@decisions_app.command("save")
+def save_decisions(
+    session: SessionOption,
+    slug: Annotated[str, typer.Option(help="A few words naming the page in the session; the same slug replaces it.")],
+    ticket: Annotated[str | None, typer.Option(help="The ticket the decisions are about.")] = None,
+    tag: TagOption = None,
+    entry_date: DateOption = None,
+) -> None:
+    """Save the decisions page read from stdin as JSON and print its id and address; starts the server if needed."""
+    settings = load_settings()
+    token = _identity_token(settings)
+    typer.echo(_ensure_running(settings), err=True)
+    payload = {
+        "session": session,
+        "slug": slug,
+        "ticket": ticket,
+        "entry_date": _iso_date(entry_date),
+        "tags": tag or [],
+        "report": _stdin_json(),
+    }
+    saved = _post_json(settings, "/api/v1/journal/decisions", payload, token)
+    typer.echo(json.dumps(saved, indent=2, ensure_ascii=False))
+    typer.echo(f"page: {report_url(settings, saved['report_id'])}")
+
+
+@decisions_app.command("wait")
+def wait_for_decisions(
+    report: ReportOption,
+    every: Annotated[float, typer.Option(help="Seconds between two looks.")] = DECISIONS_POLL_SECONDS,
+) -> None:
+    """Wait until the user answers the page, then print the answer, one line per row. Run it in the background: it
+    asks the server in short calls, so a server restart in between only delays it."""
+    settings = load_settings()
+    token = _identity_token(settings)
+    while True:
+        try:
+            collected = _post_json(settings, "/api/v1/journal/decisions/collect", {"report_id": report}, token)
+        except (urllib.error.URLError, ConnectionError, TimeoutError):
+            time.sleep(every)
+            continue
+        if collected["sent"]:
+            typer.echo(collected["text"])
+            return
+        time.sleep(every)

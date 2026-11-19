@@ -15,6 +15,7 @@ The agent calls most of them on its own when the work fits. You can also call th
 | `memory-curation` | You ask to tidy the memory, or a memory proved wrong | Writes a curation report, then applies or reverts the rows you decided |
 | `memory-migrate` | A new identity has an older memory on this machine | Brings that memory in, group by group, on your choice |
 | `journal` | At session end, or when you ask for a session summary | Writes the journal entry and the session report |
+| `decisions` | A run stops for your decisions | Puts the questions on a decisions page, waits until you send your answer and goes on from it |
 | `session-end` | You end the session | Runs memory, skill proposals and journal, in that order |
 | `skill-proposals` | A procedure was repeated during the work; at session end | Notes candidates, then proposes them as skills and asks |
 

@@ -6,6 +6,8 @@ from whaat.curation import guards
 from whaat.identities.registry import IdentityRegistry
 from whaat.journal.exceptions import (
     CurationReportNotFoundError,
+    DecisionsAlreadySentError,
+    DecisionsNotFoundError,
     InvalidStoredDocumentError,
     UndecidedRowsError,
     UnknownIdentityError,
@@ -15,8 +17,12 @@ from whaat.journal.schemas import (
     CurationAppliedCall,
     CurationReport,
     CurationRowsSaved,
+    DecisionsCollectCall,
+    DecisionsCollected,
+    DecisionsSave,
     JournalEntry,
     SavedCurationReport,
+    SavedDecisions,
     SavedJournalEntry,
     SavedSessionReport,
     SessionReport,
@@ -90,3 +96,28 @@ def save_curation_applied(
     except InvalidStoredDocumentError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err)) from err
     return CurationRowsSaved(commit=commit, warnings=warnings)
+
+
+@router.post("/decisions", response_model=SavedDecisions, status_code=status.HTTP_201_CREATED)
+def save_decisions(page: DecisionsSave, service: JournalServiceDep, identity: IdentityDep) -> SavedDecisions:
+    """A decisions page in the identity's private folder, one per session and slug; saving it again replaces its
+    questions until the user answered it (then 409)."""
+    try:
+        return service.save_decisions(page, identity)
+    except UnknownIdentityError as err:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(err)) from err
+    except (DecisionsAlreadySentError, InvalidStoredDocumentError) as err:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err)) from err
+
+
+@router.post("/decisions/collect", response_model=DecisionsCollected)
+def collect_decisions(
+    call: DecisionsCollectCall, service: JournalServiceDep, identity: IdentityDep
+) -> DecisionsCollected:
+    """The waiting session's call on its own page: `sent` false until the user answered; then the answer as lines."""
+    try:
+        return service.collect_decisions(call.report_id, identity)
+    except DecisionsNotFoundError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err)) from err
+    except InvalidStoredDocumentError as err:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err)) from err

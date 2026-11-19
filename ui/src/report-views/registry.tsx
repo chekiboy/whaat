@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { ReportDetail } from "@/client";
 import { CurationReportView } from "@/components/curation-report-view";
+import { DecisionsView } from "@/components/decisions-view";
 import { JournalBlocks } from "@/components/journal-view";
 import { SessionReportView } from "@/components/session-report-view";
 import { MarkdownView } from "@/report-views/markdown";
@@ -30,6 +31,10 @@ const VIEWS: { [F in Format]: ReportView<F> } = {
       ["Transcript", body.report.transcript],
     ],
     render: (body, report) => <SessionReportView report={body.report} session={report.envelope.session} />,
+  },
+  decisions: {
+    pins: (body) => [["Asked by", body.report.asked_by]],
+    render: (body, report) => <DecisionsView body={body.report} reportId={report.id} />,
   },
   "memory-curation": {
     render: (body, report) => (

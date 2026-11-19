@@ -12,7 +12,7 @@ from whaat.reports.store import Root, roots_from
 TOKENS_DIR_NAME = "tokens"
 # the token itself, kept so whaat can later write it into the identity's own agent config
 SECRETS_DIR_NAME = "identity-secrets"
-NEVER_SHARED_DIRS = ("journal", "session-reports", "memory/personal", "distilled")
+NEVER_SHARED_DIRS = ("journal", "session-reports", "memory/personal", "distilled", "decisions")
 STATE_DIR_NAME = "state"
 
 

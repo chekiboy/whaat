@@ -8,6 +8,7 @@ from pydantic import BaseModel
 JOURNAL_DIR = "journal"
 SESSION_REPORTS_DIR = "session-reports"
 CURATION_DIR = "memory-curation"
+DECISIONS_DIR = "decisions"
 DIR_MODE = 0o700
 FILE_MODE = 0o600
 
@@ -27,6 +28,8 @@ class JournalStore(Protocol):
 
     def curation_report_path(self, folder: Path, report_date: date) -> Path: ...
 
+    def decisions_path(self, folder: Path, day: date, session: str, slug: str) -> Path: ...
+
     def read(self, path: Path, model: type[Document]) -> Document | None: ...
 
     def write(self, folder: Path, path: Path, document: BaseModel) -> bool: ...
@@ -45,6 +48,9 @@ class FileJournalStore:
 
     def curation_report_path(self, folder: Path, report_date: date) -> Path:
         return month_dir(folder / CURATION_DIR, report_date) / f"{report_date.isoformat()}_memory-curation.json"
+
+    def decisions_path(self, folder: Path, day: date, session: str, slug: str) -> Path:
+        return month_dir(folder / DECISIONS_DIR, day) / f"{day.isoformat()}_{session}_{slug}.json"
 
     def read(self, path: Path, model: type[Document]) -> Document | None:
         """None when the file does not exist; a pydantic ValidationError when it is not a valid document."""

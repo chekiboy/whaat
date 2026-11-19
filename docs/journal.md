@@ -31,7 +31,7 @@ A page about the whole session:
 - the task and why it was needed;
 - the outcome: done, partly done or stuck;
 - the steps, one line each;
-- the **decisions**, split into yours and the agent's, each with the options that were really on the table and why one was chosen;
+- the **decisions**, split into yours and the agent's, each with the options that were really on the table and why one was chosen; what you answered on a decisions page counts as yours, with your note as the reason;
 - **drift:** where the work moved away from what was asked, and why: the goal changed, the agent misread it, or the code showed something else;
 - open questions.
 

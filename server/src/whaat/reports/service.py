@@ -2,6 +2,7 @@ import json
 import re
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -17,6 +18,7 @@ from whaat.reports.schemas import (
     ReportSummary,
 )
 from whaat.reports.store import ReportFile, ReportStore, report_key
+from whaat.reports.types.decisions import DecisionsBody, DecisionsContent
 from whaat.reports.types.journal import JournalBody, JournalContent
 from whaat.reports.types.markdown import parse_markdown
 from whaat.reports.types.memory_curation import CurationReportBody, CurationReportContent
@@ -35,6 +37,7 @@ WRITERS = {
     "memory-curation": "memory-curation",
     "session-report": "self-model-journal",
     "journal": "self-model-journal",
+    "decisions": "whaat:decisions",
 }
 DATE_IN_NAME = re.compile(r"(\d{4})-?(\d{2})-?(\d{2})")
 TICKET = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,10}-\d+)(?![A-Za-z0-9])")
@@ -54,6 +57,8 @@ def kind_of(report: ReportFile) -> str:
         return "session-report"
     if top_dir == "journal":
         return "journal"
+    if top_dir == "decisions":
+        return "decisions"
     return "markdown"
 
 
@@ -107,8 +112,24 @@ def privacy_of(report: ReportFile) -> tuple[bool, list[str]]:
     return False, []
 
 
-def state_of(report: ReportFile) -> ReportState:
-    return "applied" if report.companion(SENT_SUFFIX).exists() else "done"
+def state_of(report: ReportFile, document: dict[str, Any] | None) -> ReportState:
+    """applied: a curation report with sent rows beside it; waiting: a decisions page not answered yet."""
+    if report.companion(SENT_SUFFIX).exists():
+        return "applied"
+    body = (document or {}).get("body")
+    if kind_of(report) == "decisions" and isinstance(body, dict) and not body.get("sent_at"):
+        return "waiting"
+    return "done"
+
+
+def _parsed(report: ReportFile, text: str) -> dict[str, Any] | None:
+    if report.path.suffix != ".json":
+        return None
+    try:
+        document = json.loads(text)
+    except ValueError:
+        return None
+    return document if isinstance(document, dict) else None
 
 
 def _newest_first(summary: ReportSummary) -> tuple[date, str]:
@@ -151,7 +172,8 @@ class ReportService:
 
     def _summary(self, report: ReportFile, text: str) -> ReportSummary:
         warnings: list[str] = []
-        envelope, source = self._envelope(report, text, warnings)
+        document = _parsed(report, text)
+        envelope, source = self._envelope(report, text, document, warnings)
         owner = report.root.identity
         if envelope.identity is None:
             envelope = envelope.model_copy(update={"identity": owner})
@@ -167,15 +189,19 @@ class ReportService:
             envelope=envelope,
             envelope_source=source,
             private=private,
-            state=state_of(report),
+            state=state_of(report, document),
             warnings=warnings + privacy_warnings,
         )
 
     @staticmethod
-    def _envelope(report: ReportFile, text: str, warnings: list[str]) -> tuple[Envelope, EnvelopeSource]:
+    def _envelope(
+        report: ReportFile, text: str, document: dict[str, Any] | None, warnings: list[str]
+    ) -> tuple[Envelope, EnvelopeSource]:
         if report.path.suffix == ".json":
             try:
-                return Envelope.model_validate(json.loads(text)["envelope"]), "embedded"
+                if document is None:
+                    raise ValueError("not a JSON object")
+                return Envelope.model_validate(document["envelope"]), "embedded"
             except (ValueError, KeyError, TypeError, ValidationError) as err:
                 warnings.append(INVALID_DOCUMENT_WARNING.format(name=report.path.name, reason=type(err).__name__))
                 return derive_envelope(report, ""), "derived"
@@ -200,6 +226,8 @@ def content_of(report: ReportFile, kind: str, text: str) -> ReportContent:
             return SessionReportContent(report=SessionReportBody.model_validate(body))
         if kind == "memory-curation":
             return CurationReportContent(report=CurationReportBody.model_validate(body))
+        if kind == "decisions":
+            return DecisionsContent(report=DecisionsBody.model_validate(body))
     except (ValueError, KeyError, TypeError, ValidationError):
         pass
     return ReportBody(title=report.path.stem, pins=[], sections=[ReportSection(heading="JSON", level=2, markdown=text)])

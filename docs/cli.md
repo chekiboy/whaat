@@ -54,6 +54,8 @@ More: [Memory](memory.md).
 | `whaat journal save-curation` | Saves a curation report |
 | `whaat journal save-applied` | Writes the commits into the applied rows |
 | `whaat journal discarded` | Proposals you rejected earlier |
+| `whaat decisions save` | Saves a decisions page read from stdin and prints its address |
+| `whaat decisions wait` | Waits until you answer a decisions page, then prints your answer, one line per question |
 
 More: [Curation](curation.md).
 

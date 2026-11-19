@@ -717,6 +717,39 @@
         "title": "Decision",
         "type": "object"
       },
+      "DecisionAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "choice": {
+            "description": "The chosen option's value.",
+            "title": "Choice",
+            "type": "string"
+          },
+          "n": {
+            "description": "The row's number.",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "n",
+          "choice"
+        ],
+        "title": "DecisionAnswer",
+        "type": "object"
+      },
       "DecisionOption": {
         "additionalProperties": false,
         "properties": {
@@ -748,6 +781,401 @@
           "chosen"
         ],
         "title": "DecisionOption",
+        "type": "object"
+      },
+      "DecisionRow": {
+        "additionalProperties": false,
+        "properties": {
+          "choice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set by whaat: the chosen option's value, or 'discuss' to talk it over first.",
+            "title": "Choice"
+          },
+          "explain": {
+            "description": "What the user needs to decide well, as markdown: what, why, the cost.",
+            "minLength": 1,
+            "title": "Explain",
+            "type": "string"
+          },
+          "n": {
+            "description": "The row's number; the answer names rows by it.",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set by whaat: the user's note on the row.",
+            "title": "Note"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionsOption"
+            },
+            "minItems": 2,
+            "title": "Options",
+            "type": "array"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "n",
+          "title",
+          "explain",
+          "options"
+        ],
+        "title": "DecisionRow",
+        "type": "object"
+      },
+      "DecisionRowIn": {
+        "additionalProperties": false,
+        "properties": {
+          "explain": {
+            "description": "What the user needs to decide well, as markdown: what, why, the cost.",
+            "minLength": 1,
+            "title": "Explain",
+            "type": "string"
+          },
+          "n": {
+            "description": "The row's number; the answer names rows by it.",
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionsOption"
+            },
+            "minItems": 2,
+            "title": "Options",
+            "type": "array"
+          },
+          "title": {
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "n",
+          "title",
+          "explain",
+          "options"
+        ],
+        "title": "DecisionRowIn",
+        "type": "object"
+      },
+      "DecisionsAnswer": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "description": "The rows the user decided; the rest stay open.",
+            "items": {
+              "$ref": "#/components/schemas/DecisionAnswer"
+            },
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "title": "DecisionsAnswer",
+        "type": "object"
+      },
+      "DecisionsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "asked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The step that asks, e.g. `implement-task \u00b7 phase 3`.",
+            "title": "Asked By"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionRow"
+            },
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Set by whaat: when the user sent the answer.",
+            "title": "Sent At"
+          },
+          "summary": {
+            "description": "What the user should know before deciding, as markdown (tables allowed).",
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "description": "What the page decides, e.g. `ABC-101 \u00b7 phase 3 gate`.",
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "v": {
+            "default": 1,
+            "title": "V",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "rows"
+        ],
+        "title": "DecisionsBody",
+        "type": "object"
+      },
+      "DecisionsBodyIn": {
+        "additionalProperties": false,
+        "properties": {
+          "asked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The step that asks, e.g. `implement-task \u00b7 phase 3`.",
+            "title": "Asked By"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionRowIn"
+            },
+            "minItems": 1,
+            "title": "Rows",
+            "type": "array"
+          },
+          "summary": {
+            "description": "What the user should know before deciding, as markdown (tables allowed).",
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "description": "What the page decides, e.g. `ABC-101 \u00b7 phase 3 gate`.",
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "rows"
+        ],
+        "title": "DecisionsBodyIn",
+        "type": "object"
+      },
+      "DecisionsCollectCall": {
+        "additionalProperties": false,
+        "properties": {
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_id"
+        ],
+        "title": "DecisionsCollectCall",
+        "type": "object"
+      },
+      "DecisionsCollected": {
+        "properties": {
+          "sent": {
+            "description": "False while the user has not answered yet.",
+            "title": "Sent",
+            "type": "boolean"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The answer as the session reads it: one line per row; null until sent.",
+            "title": "Text"
+          }
+        },
+        "required": [
+          "sent",
+          "sent_at",
+          "text"
+        ],
+        "title": "DecisionsCollected",
+        "type": "object"
+      },
+      "DecisionsContent": {
+        "additionalProperties": false,
+        "properties": {
+          "format": {
+            "const": "decisions",
+            "default": "decisions",
+            "title": "Format",
+            "type": "string"
+          },
+          "report": {
+            "$ref": "#/components/schemas/DecisionsBody"
+          }
+        },
+        "required": [
+          "report"
+        ],
+        "title": "DecisionsContent",
+        "type": "object"
+      },
+      "DecisionsOption": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "description": "The option as the user reads it.",
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "recommended": {
+            "default": false,
+            "description": "The option the agent recommends; at most one per row.",
+            "title": "Recommended",
+            "type": "boolean"
+          },
+          "value": {
+            "description": "What the session reads back when this option is chosen, e.g. `apply`.",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+            "title": "Value",
+            "type": "string"
+          },
+          "why": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A word on why it is recommended, e.g. `KISS`; optional.",
+            "title": "Why"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "DecisionsOption",
+        "type": "object"
+      },
+      "DecisionsSave": {
+        "additionalProperties": false,
+        "properties": {
+          "entry_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Date"
+          },
+          "report": {
+            "$ref": "#/components/schemas/DecisionsBodyIn"
+          },
+          "session": {
+            "pattern": "^[0-9a-f]{8}$",
+            "title": "Session",
+            "type": "string"
+          },
+          "slug": {
+            "description": "A few words naming the page within the session; saving the same slug again replaces it.",
+            "pattern": "^[a-z0-9][a-z0-9-]{0,63}$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "pattern": "^[a-z][a-z0-9-]{0,31}$",
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "ticket": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The ticket the decisions are about, if any.",
+            "title": "Ticket"
+          }
+        },
+        "required": [
+          "session",
+          "slug",
+          "report"
+        ],
+        "title": "DecisionsSave",
         "type": "object"
       },
       "DecisionsSent": {
@@ -3981,6 +4409,7 @@
           "body": {
             "discriminator": {
               "mapping": {
+                "decisions": "#/components/schemas/DecisionsContent",
                 "journal": "#/components/schemas/JournalContent",
                 "markdown": "#/components/schemas/ReportBody",
                 "memory-curation": "#/components/schemas/CurationReportContent",
@@ -4000,6 +4429,9 @@
               },
               {
                 "$ref": "#/components/schemas/CurationReportContent"
+              },
+              {
+                "$ref": "#/components/schemas/DecisionsContent"
               }
             ],
             "title": "Body"
@@ -4040,7 +4472,8 @@
           "state": {
             "enum": [
               "done",
-              "applied"
+              "applied",
+              "waiting"
             ],
             "title": "State",
             "type": "string"
@@ -4143,7 +4576,8 @@
           "state": {
             "enum": [
               "done",
-              "applied"
+              "applied",
+              "waiting"
             ],
             "title": "State",
             "type": "string"
@@ -4412,6 +4846,48 @@
           "warnings"
         ],
         "title": "SavedCurationReport",
+        "type": "object"
+      },
+      "SavedDecisions": {
+        "properties": {
+          "commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit"
+          },
+          "envelope": {
+            "$ref": "#/components/schemas/Envelope"
+          },
+          "replaced": {
+            "title": "Replaced",
+            "type": "boolean"
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "report_id",
+          "replaced",
+          "commit",
+          "envelope",
+          "warnings"
+        ],
+        "title": "SavedDecisions",
         "type": "object"
       },
       "SavedJournalEntry": {
@@ -6179,6 +6655,100 @@
           }
         ],
         "summary": "Save Curation Applied",
+        "tags": [
+          "journal"
+        ]
+      }
+    },
+    "/api/v1/journal/decisions": {
+      "post": {
+        "description": "A decisions page in the identity's private folder, one per session and slug; saving it again replaces its\nquestions until the user answered it (then 409).",
+        "operationId": "save_decisions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionsSave"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedDecisions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Decisions",
+        "tags": [
+          "journal"
+        ]
+      }
+    },
+    "/api/v1/journal/decisions/collect": {
+      "post": {
+        "description": "The waiting session's call on its own page: `sent` false until the user answered; then the answer as lines.",
+        "operationId": "collect_decisions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionsCollectCall"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionsCollected"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Collect Decisions",
         "tags": [
           "journal"
         ]
@@ -8240,6 +8810,64 @@
           }
         ],
         "summary": "Get Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{report_id}/answer": {
+      "post": {
+        "description": "The user's answer on a decisions page: each named row's choice and note, and the page's sent stamp; once.",
+        "operationId": "answer_decisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionsAnswer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurationRowsSaved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Answer Decisions",
         "tags": [
           "reports"
         ]

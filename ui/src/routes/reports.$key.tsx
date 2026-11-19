@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import type { ReportDetail } from "@/client";
 import { getReportByKeyOptions } from "@/client/@tanstack/react-query.gen";
 import { Pins, ReportFrame } from "@/components/report-frame";
+import { ReportsModuleBar } from "@/components/reports-module-bar";
 import { useTranslation } from "@/i18n";
 import { useKindInfo } from "@/lib/report-kinds";
 import { viewOf } from "@/report-views/registry";
@@ -19,6 +20,7 @@ function ReportPage() {
 
   return (
     <article>
+      <ReportsModuleBar session={data?.envelope.session} current={key} />
       <Link
         to="/reports"
         search={{}}

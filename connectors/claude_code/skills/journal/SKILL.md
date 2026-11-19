@@ -96,7 +96,7 @@ identity are whaat's; the report holds no copy of the journal, which whaat shows
   why I did not ask. Each row the user answered on a decisions page of this session (the `whaat decisions wait`
   output in the transcript) is one `DU`: the row's title, its options with the chosen one marked, and as `why`
   their note, or `chosen on the decisions page <page title>` when they wrote none. A row left open (`n. —`) is
-  no decision;
+  no decision, nor is a `discuss` row: what the chat that followed decided is the DU;
 - `drift`: `DF-1 …`, from what to what (`title`), and the `cause`: the user changed the goal, I misread it, the
   code showed something else…;
 - `open_questions`: `Q1 …`, a question or todo.

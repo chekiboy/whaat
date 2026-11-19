@@ -17,7 +17,7 @@ The **Reports** page lists them side by side. You can filter by kind and by whos
 - a **decisions page** shows the questions a session put to you, each with its options, the recommended one and a note field; every question can also be put to discussion. You send your answer once, and the waiting session reads it;
 - a **markdown report** is shown as written.
 
-The **Sessions** page lists every session that left a document, one line each, with its reports, journal and decisions pages. A line opens the session's main document: the decisions page that waits for you, else its report.
+The **Sessions** page lists every session that left a document, one line each, with its reports, journal and decisions pages. A line opens the session's main document: its report, else the decisions page that waits for you, else its newest document.
 
 A report's address in the app is a short code, so a link does not reveal what it opens.
 

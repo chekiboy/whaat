@@ -85,4 +85,49 @@ describe("DecisionsView", () => {
     const request = fetch.mock.calls[0]?.[0] as Request;
     expect(JSON.parse(await request.text()).rows).toEqual([{ n: 2, choice: "discuss", note: "why not both?" }]);
   });
+
+  it("clears a pick when its option is clicked again", async () => {
+    const send = await renderView();
+
+    fireEvent.click(option(/Apply it/, 0));
+    expect(send).toBeEnabled();
+    fireEvent.click(option(/Apply it/, 0));
+    expect(send).toBeDisabled();
+  });
+
+  it("shows a sent page read-only, with no Send", async () => {
+    client.setConfig({ baseUrl: "http://localhost" });
+    const sent = { ...body, sent_at: "2026-11-19 11:42", rows: body.rows.map((row) => ({ ...row, choice: "apply" })) };
+    const rootRoute = createRootRoute({ component: () => <DecisionsView body={sent} reportId="r:decisions/x.json" /> });
+    const router = createRouter({ routeTree: rootRoute, history: createMemoryHistory() });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    await screen.findAllByRole("button", { name: /Apply it/ });
+    expect(screen.queryByRole("button", { name: /Send/ })).toBeNull();
+    for (const button of screen.getAllByRole("button", { name: /Apply it|Skip it|discuss/ }))
+      expect(button).toBeDisabled();
+  });
+
+  it("goes back to where the user came from after Send", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 200 }));
+    client.setConfig({ baseUrl: "http://localhost" });
+    const rootRoute = createRootRoute({ component: () => <DecisionsView body={body} reportId="r:decisions/x.json" /> });
+    const history = createMemoryHistory({ initialEntries: ["/sessions", "/page"], initialIndex: 1 });
+    const router = createRouter({ routeTree: rootRoute, history });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+
+    await screen.findAllByRole("button", { name: /Apply it/ });
+    fireEvent.click(option(/Apply it/, 0));
+    fireEvent.click(screen.getByRole("button", { name: /Send/ }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/sessions"));
+  });
 });

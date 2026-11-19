@@ -525,7 +525,6 @@ export const hu = {
     stateLabel: "Állapot",
     pagesTitle: "Döntési oldalak",
     thisSession: "Ez a session",
-    sessionWaiting: "döntés vár",
     noSessions: "Nincs ilyen session.",
     sessionState: { waiting: "vár", finished: "befejezett", noReport: "nincs riport" },
     waiting: "Vár",

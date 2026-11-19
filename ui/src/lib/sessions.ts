@@ -18,10 +18,8 @@ const ORDER: Record<string, number> = { "session-report": 0, journal: 1, decisio
 
 const stamp = (report: ReportSummary) => report.envelope.created_at ?? report.envelope.created_date ?? "";
 
-/** The reports that name a session, one group per session. A session belongs to the day it started, and the list runs
-    newest start first. A session report makes it finished, even beside a page nobody answered; without one, an
-    unanswered decisions page makes it waiting. Its main document opens on a click: the report, else the page that
-    waits, else its newest document. */
+/** The reports that name a session, one group per session. A session report makes it finished, even beside a page
+    nobody answered. */
 export function groupSessions(reports: ReportSummary[]): SessionGroup[] {
   const bySession = new Map<string, ReportSummary[]>();
   for (const report of reports) {

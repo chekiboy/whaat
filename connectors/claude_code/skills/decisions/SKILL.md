@@ -30,8 +30,8 @@ I wait for the answer in the background and go on from it.
    ask it in chat. Write the content in the language of the work's documents; whaat translates only its own interface.
 
 2. Save it as this session's page. `<session8>` is the first 8 characters of this session's id (it is in the
-   scratchpad path). The same `--slug` on the same day replaces the page until it is answered; another day, or after
-   the answer, it makes a new page:
+   scratchpad path). The same `--slug` on the same day replaces the page until it is answered; another day it makes a
+   new page, and after the answer a new slug is needed:
 
    ```bash
    ${CLAUDE_SKILL_DIR}/../../scripts/whaat decisions save --session <session8> --slug <slug> [--ticket ABC-101] [--tag <tag>] < <scratchpad>/decisions.json
@@ -64,4 +64,5 @@ I wait for the answer in the background and go on from it.
      the note.
    - `n. —` is left open, never a yes: ask again or leave it, and say which.
 
-   The answer is the user's decision; new evidence against it goes back as a new question.
+   Repeat the answer lines in my reply, so they outlast a context compaction. The answer is the user's decision;
+   new evidence against it goes back as a new question.

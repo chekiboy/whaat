@@ -47,7 +47,12 @@ function SessionsPage() {
 
   const chips: [Filter, string, string, number][] = [
     ["all", t("curation.bar.all"), "var(--cream2)", matching.length],
-    ["waiting", t("decisions.sessionWaiting"), COLOR.waiting, matching.filter((s) => s.state === "waiting").length],
+    [
+      "waiting",
+      t("decisions.sessionState.waiting"),
+      COLOR.waiting,
+      matching.filter((s) => s.state === "waiting").length,
+    ],
     [
       "finished",
       t("decisions.sessionState.finished"),

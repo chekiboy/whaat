@@ -1,7 +1,7 @@
 import { useLanguage, useTranslation } from "@/i18n";
 
 export function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toLocaleDateString("sv");
 }
 
 /** A `YYYY-MM-DD` day as people say it: today, yesterday, else a short date in the chosen language. Noon keeps a day

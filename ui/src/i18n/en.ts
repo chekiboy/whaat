@@ -524,7 +524,6 @@ export const en = {
     stateLabel: "State",
     pagesTitle: "Decision pages",
     thisSession: "This session",
-    sessionWaiting: "decision waiting",
     noSessions: "No session matches.",
     sessionState: { waiting: "waiting", finished: "finished", noReport: "no report" },
     waiting: "Waiting",

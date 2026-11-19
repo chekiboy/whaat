@@ -95,7 +95,7 @@ function SessionJournal({ session, open }: { session: string; open: boolean }) {
 }
 
 /** The session's decisions pages, each linked, with whether it still waits for the user. */
-function SessionDecisionPages({ session }: { session: string }) {
+export function SessionDecisionPages({ session }: { session: string }) {
   const { t } = useTranslation();
   const { data: pages } = useQuery(listReportsOptions({ query: { session, kind: "decisions" } }));
   if (!pages?.length) return null;

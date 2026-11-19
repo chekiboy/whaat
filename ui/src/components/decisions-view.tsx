@@ -15,10 +15,11 @@ type Kind = Exclude<Tile, "all">;
 /** The option whaat adds to every row: talk it over before anything is decided. */
 const DISCUSS = "discuss";
 
-/** A row's state: open, decided as recommended (a row with no recommendation counts here), or anything else. */
+/** A row's state: open (a row put to discussion too), decided as recommended (a row with no recommendation counts
+    here), or anything else. */
 function kindOf(row: Row, answer: RowAnswer): Kind {
   const choice = answer.choice ?? row.choice;
-  if (!choice) return "q";
+  if (!choice || choice === DISCUSS) return "q";
   const recommended = row.options.find((option) => option.recommended);
   return !recommended || recommended.value === choice ? "du" : "df";
 }
@@ -195,7 +196,7 @@ function DecisionCard({
                 type="button"
                 className="dc-option"
                 disabled={readOnly}
-                onClick={() => onAnswer({ choice: option.value })}
+                onClick={() => onAnswer({ choice: option.value === choice ? undefined : option.value })}
               >
                 <span>{option.value === choice ? "✔" : "·"}</span>
                 <span>

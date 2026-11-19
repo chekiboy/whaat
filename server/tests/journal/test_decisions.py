@@ -1,6 +1,7 @@
 import hashlib
 import json
 import re
+import urllib.error
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -209,3 +210,35 @@ def test_the_skill_example_is_a_valid_page() -> None:
 
     assert block is not None
     DecisionsBodyIn.model_validate(json.loads(block.group(1)))
+
+
+def test_a_crafted_path_cannot_reach_another_identitys_page(client: TestClient, tmp_path: Path) -> None:
+    write(tmp_path / "state/tokens/second", hashlib.sha256(b"second-token").hexdigest())
+    (tmp_path / "second-archive/decisions").mkdir(parents=True)
+    save(client)
+    answer(client, f"private-claude:{FILE}", [{"n": 1, "choice": "accept"}])
+    crafted = f"private-second:decisions/../../claude-archive/{FILE}"
+
+    assert collect(client, crafted, {"Authorization": "Bearer second-token"}).status_code == 404
+
+
+def test_a_document_outside_the_decisions_folder_is_not_a_page(client: TestClient) -> None:
+    assert collect(client, "private-claude:journal/2026-10-29_38e0994a.md").status_code == 404
+
+
+def test_wait_keeps_waiting_through_a_server_that_is_down(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = iter([urllib.error.URLError("down"), {"sent": True, "text": "decisions x: sent now\n1. accept"}])
+
+    def post(*_: object) -> object:
+        answer = next(calls)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setenv("WHAAT_TOKEN", CLAUDE_TOKEN)
+    monkeypatch.setattr(cli, "_post_json", post)
+    monkeypatch.setattr(cli.time, "sleep", lambda _: None)
+
+    result = CliRunner().invoke(cli.app, ["decisions", "wait", "--report", "private-claude:decisions/x.json"])
+
+    assert (result.exit_code, result.stdout.splitlines()[-1]) == (0, "1. accept")

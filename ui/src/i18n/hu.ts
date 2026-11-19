@@ -523,6 +523,7 @@ export const hu = {
   decisions: {
     title: "Döntések",
     stateLabel: "Állapot",
+    pagesTitle: "Döntési oldalak",
     thisSession: "Ez a session",
     sessionWaiting: "döntés vár",
     noSessions: "Nincs ilyen session.",

@@ -522,6 +522,7 @@ export const en = {
   decisions: {
     title: "Decisions",
     stateLabel: "State",
+    pagesTitle: "Decision pages",
     thisSession: "This session",
     sessionWaiting: "decision waiting",
     noSessions: "No session matches.",

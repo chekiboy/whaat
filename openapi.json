@@ -795,7 +795,7 @@
                 "type": "null"
               }
             ],
-            "description": "Set by whaat: the chosen option's value.",
+            "description": "Set by whaat: the chosen option's value, or 'discuss' to talk it over first.",
             "title": "Choice"
           },
           "explain": {

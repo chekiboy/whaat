@@ -173,7 +173,7 @@ Version 0.3.1: early software. Until 1.0, the API, the CLI and the file formats 
 4. Start `claude` in that folder. The plugin starts the server when it first needs it.
 5. Bring existing memory in, if you have some: open the identity's page from the home page or from Settings › Identities, and start the migration.
 
-The plugin's skills run as `/whaat:<name>`: `memory` (save), `memory-recall`, `memory-curation`, `memory-migrate`, `journal`, `session-end` and `skill-proposals`. The agent calls most of them by itself when the work fits.
+The plugin's skills run as `/whaat:<name>`: `memory` (save), `memory-recall`, `memory-curation`, `memory-migrate`, `journal`, `decisions`, `session-end` and `skill-proposals`. The agent calls most of them by itself when the work fits.
 
 ## What `connect` writes
 

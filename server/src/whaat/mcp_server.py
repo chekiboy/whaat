@@ -1,4 +1,5 @@
-"""whaat over MCP: the calls the connector's skills make, each one API call with this identity's token.
+"""whaat over MCP: the calls the connector's skills make, each one API call with this identity's token. Decisions
+pages are not here: a session gets their answer by running `whaat decisions wait`, whose exit wakes it.
 
 Only what a skill uses is here; a tool takes what its API route takes. The session is the client's when it names one
 (Claude Code passes CLAUDE_CODE_SESSION_ID to its MCP servers), else this process's own; recall, outcome, journal and

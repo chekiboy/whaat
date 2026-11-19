@@ -15,6 +15,7 @@ CLAUDE = {"Authorization": f"Bearer {CLAUDE_TOKEN}"}
 ENTRY = {"session": "9007036a", "entry_date": "2026-10-30", "block": BLOCK}
 SKELETON = [
     ".gitignore",
+    "decisions/.private",
     "distilled/.private",
     "journal/.private",
     "memory/personal/.private",

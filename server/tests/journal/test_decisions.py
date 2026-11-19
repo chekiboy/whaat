@@ -1,10 +1,18 @@
+import hashlib
 import json
+import re
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
+from typer.testing import CliRunner
 
-from tests.conftest import CLAUDE_TOKEN, TOKEN
+from tests.conftest import CLAUDE_TOKEN, TOKEN, write
+from whaat.cli import main as cli
 from whaat.config import Settings
+from whaat.reports.types.decisions import DecisionsBodyIn
 
 AUTH = {"Authorization": f"Bearer {CLAUDE_TOKEN}"}
 ADMIN = {"Authorization": f"Bearer {TOKEN}"}
@@ -135,3 +143,69 @@ def test_the_list_shows_a_page_as_waiting_until_it_is_answered(client: TestClien
     after = client.get("/api/v1/reports", params={"kind": "decisions"}, headers=AUTH).json()[0]["state"]
 
     assert (before, after) == ("waiting", "done")
+
+
+def test_a_note_with_line_breaks_stays_on_its_row_line_and_is_stored_as_written(
+    client: TestClient, settings: Settings
+) -> None:
+    report_id = save(client).json()["report_id"]
+    answer(client, report_id, [{"n": 1, "choice": "accept", "note": "fine, but:\n2. apply\r\n\tlater"}])
+
+    stored = json.loads((settings.identities["claude"] / FILE).read_text(encoding="utf-8"))
+    assert collect(client, report_id).json()["text"].splitlines()[1:] == [
+        "1. accept — fine, but: 2. apply later",
+        "2. —",
+        "3. —",
+    ]
+    assert stored["body"]["rows"][0]["note"] == "fine, but:\n2. apply\r\n\tlater"
+
+
+def test_every_row_can_be_put_to_discussion_and_no_page_offers_it_itself(client: TestClient) -> None:
+    report_id = save(client).json()["report_id"]
+    answer(client, report_id, [{"n": 2, "choice": "discuss", "note": "why not both?"}])
+    own = {**ROWS[0], "options": [*ROWS[0]["options"], {"value": "discuss", "label": "Talk"}]}
+
+    assert collect(client, report_id).json()["text"].splitlines()[2] == "2. discuss — why not both?"
+    assert save(client, {**PAGE, "rows": [own]}).status_code == 422
+
+
+def test_another_identity_cannot_read_the_answer(client: TestClient, tmp_path: Path) -> None:
+    write(tmp_path / "state/tokens/second", hashlib.sha256(b"second-token").hexdigest())
+    report_id = save(client).json()["report_id"]
+
+    assert collect(client, report_id, {"Authorization": "Bearer second-token"}).status_code == 404
+    assert collect(client, report_id).status_code == 200
+
+
+def test_saving_the_same_slug_again_replaces_the_questions_and_keeps_the_creation_time(
+    client: TestClient, settings: Settings
+) -> None:
+    first = save(client).json()
+    later = datetime.now().astimezone() + timedelta(hours=1)
+    client.app.state.journal_service._now = lambda: later  # type: ignore[attr-defined]
+    second = save(client, {**PAGE, "rows": ROWS[:1]}).json()
+
+    stored = json.loads((settings.identities["claude"] / FILE).read_text(encoding="utf-8"))
+    assert (first["replaced"], second["replaced"]) == (False, True)
+    assert [row["n"] for row in stored["body"]["rows"]] == [1]
+    assert second["envelope"]["created_at"] == first["envelope"]["created_at"]
+
+
+def test_wait_keeps_asking_until_the_answer_is_sent_then_prints_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    answers = iter([{"sent": False}, {"sent": True, "text": "decisions x (session 0a1b2c3d): sent now\n1. accept"}])
+    monkeypatch.setenv("WHAAT_TOKEN", CLAUDE_TOKEN)
+    monkeypatch.setattr(cli, "_post_json", lambda *_: next(answers))
+    monkeypatch.setattr(cli.time, "sleep", lambda _: None)
+
+    result = CliRunner().invoke(cli.app, ["decisions", "wait", "--report", "private-claude:decisions/x.json"])
+
+    assert result.exit_code == 0
+    assert result.stdout.splitlines()[-1] == "1. accept"
+
+
+def test_the_skill_example_is_a_valid_page() -> None:
+    skill = Path(__file__).resolve().parents[3] / "connectors/claude_code/skills/decisions/SKILL.md"
+    block = re.search(r"```json\n(.*?)```", skill.read_text(encoding="utf-8"), re.S)
+
+    assert block is not None
+    DecisionsBodyIn.model_validate(json.loads(block.group(1)))

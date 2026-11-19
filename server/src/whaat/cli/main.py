@@ -720,13 +720,6 @@ def save_decisions(
     typer.echo(f"page: {report_url(settings, saved['report_id'])}")
 
 
-def _collect(settings: Settings, report_id: str, token: str) -> dict[str, Any]:
-    collected: dict[str, Any] = _post_json(
-        settings, "/api/v1/journal/decisions/collect", {"report_id": report_id}, token
-    )
-    return collected
-
-
 @decisions_app.command("wait")
 def wait_for_decisions(
     report: ReportOption,
@@ -738,7 +731,7 @@ def wait_for_decisions(
     token = _identity_token(settings)
     while True:
         try:
-            collected = _collect(settings, report, token)
+            collected = _post_json(settings, "/api/v1/journal/decisions/collect", {"report_id": report}, token)
         except (urllib.error.URLError, ConnectionError, TimeoutError):
             time.sleep(every)
             continue

@@ -37,8 +37,9 @@ from whaat.journal.schemas import (
 )
 from whaat.journal.store import CURATION_DIR, DECISIONS_DIR, Document, JournalStore
 from whaat.reports.schemas import Envelope
+from whaat.reports.service import WRITERS
 from whaat.reports.store import ReportFile, Root
-from whaat.reports.types.decisions import DecisionRow, DecisionsBody
+from whaat.reports.types.decisions import DISCUSS, DecisionRow, DecisionsBody
 from whaat.reports.types.journal import JournalBlock, JournalBody
 from whaat.reports.types.memory_curation import CurationReportBody
 from whaat.reports.types.session_report import SessionReportBody
@@ -51,7 +52,7 @@ DECISIONS_COMMIT_MESSAGE = "memory-curation: decisions on {name}"
 APPLIED_COMMIT_MESSAGE = "memory-curation: applied rows of {name}"
 SENT_COMMIT_MESSAGE = "memory-curation: rows sent to the session, {name}"
 WRITER = "whaat:journal"
-DECISIONS_WRITER = "whaat:decisions"
+DECISIONS_WRITER = WRITERS["decisions"]
 DECISIONS_SAVE_MESSAGE = "decisions: {name}"
 DECISIONS_ANSWER_MESSAGE = "decisions: answered, {name}"
 NOT_A_REPOSITORY_WARNING = "the private folder of {identity} is not a git repository; it is not committed"
@@ -206,16 +207,18 @@ class JournalService:
                 **page.report.model_dump(exclude={"rows"}),
                 rows=[DecisionRow(**row.model_dump()) for row in page.report.rows],
             )
-            envelope = Envelope(
+            envelope = self._envelope(
+                previous.envelope if previous else None,
                 kind="decisions",
                 title=body.title,
                 created_date=day,
-                created_at=previous.envelope.created_at if previous and previous.envelope.created_at else now,
                 session=page.session,
-                ticket=page.ticket,
-                writer=DECISIONS_WRITER,
+                repo=None,
                 identity=identity,
-                tags=list(dict.fromkeys([*(previous.envelope.tags if previous else []), *page.tags])),
+                tags=page.tags,
+                now=now,
+                writer=DECISIONS_WRITER,
+                ticket=page.ticket,
             )
             self._store.write(root.path, report.path, DecisionsDocument(envelope=envelope, body=body))
             commit = self._commit(root, report.path, DECISIONS_SAVE_MESSAGE.format(name=report.path.name), warnings)
@@ -237,7 +240,7 @@ class JournalService:
             if unknown:
                 raise InvalidAnswerError(f"the page has no rows {', '.join(map(str, unknown))}")
             for n, answer in given.items():
-                if answer.choice not in {option.value for option in rows[n].options}:
+                if answer.choice not in {DISCUSS, *(option.value for option in rows[n].options)}:
                     raise InvalidAnswerError(f"row {n}: {answer.choice!r} is not one of its options")
             updated = [
                 row.model_copy(
@@ -262,12 +265,7 @@ class JournalService:
         return DecisionsCollected(sent=True, sent_at=document.body.sent_at, text=_answer_text(report, document))
 
     def _decisions_page(self, report_id: str, identity: str | None) -> tuple[Root, ReportFile]:
-        root_key, _, rel = report_id.partition(":")
-        principal = ADMIN if identity is None else Principal(identity)
-        root = next((r for r in self._roots_for(principal) if r.key == root_key and r.identity), None)
-        if root is None or not rel.startswith(DECISIONS_DIR + "/") or ".." in Path(rel).parts:
-            raise DecisionsNotFoundError(report_id)
-        return root, ReportFile(root, root.path / rel)
+        return self._private_page(report_id, identity, DECISIONS_DIR, DecisionsNotFoundError)
 
     def _decisions_document(self, report: ReportFile) -> DecisionsDocument:
         document = self._read(report, DecisionsDocument)
@@ -276,11 +274,18 @@ class JournalService:
         return document
 
     def _curation_report(self, report_id: str, identity: str | None) -> tuple[Root, ReportFile]:
+        return self._private_page(report_id, identity, CURATION_DIR, CurationReportNotFoundError)
+
+    def _private_page(
+        self, report_id: str, identity: str | None, directory: str, not_found: Callable[[str], Exception]
+    ) -> tuple[Root, ReportFile]:
+        """A document below `directory` in an identity's private folder: the admin reaches every identity's, an
+        identity only its own."""
         root_key, _, rel = report_id.partition(":")
         principal = ADMIN if identity is None else Principal(identity)
         root = next((r for r in self._roots_for(principal) if r.key == root_key and r.identity), None)
-        if root is None or not rel.startswith(CURATION_DIR + "/") or ".." in Path(rel).parts:
-            raise CurationReportNotFoundError(report_id)
+        if root is None or not rel.startswith(directory + "/") or ".." in Path(rel).parts:
+            raise not_found(report_id)
         return root, ReportFile(root, root.path / rel)
 
     def _update_curation_rows(
@@ -336,6 +341,8 @@ class JournalService:
         identity: str,
         tags: list[str],
         now: datetime,
+        writer: str = WRITER,
+        ticket: str | None = None,
     ) -> Envelope:
         """The first save fixes the date and the creation time; tags only ever grow."""
         return Envelope(
@@ -345,7 +352,8 @@ class JournalService:
             created_at=previous.created_at if previous and previous.created_at else now,
             session=session,
             repo=repo,
-            writer=WRITER,
+            ticket=ticket,
+            writer=writer,
             identity=identity,
             tags=list(dict.fromkeys([*(previous.tags if previous else []), *tags])),
         )
@@ -363,14 +371,19 @@ class JournalService:
 
 def _answer_text(report: ReportFile, document: DecisionsDocument) -> str:
     """One line per row, in the page's order: the chosen value, marked when it is not the recommended one, and the
-    note; an open row is `—`. Machine text for the session, the same in every UI language."""
+    note on the same line (its line breaks become spaces); an open row is `—`. Machine text, the same in every UI
+    language; its readers are the decisions and journal connector skills, which parse these lines."""
     session = document.envelope.session or "?"
     lines = [f"decisions {report.path.stem} (session {session}): sent {document.body.sent_at}"]
     for row in document.body.rows:
         if row.choice is None:
             lines.append(f"{row.n}. —")
             continue
-        chosen = next(option for option in row.options if option.value == row.choice)
-        off = "" if chosen.recommended or not any(o.recommended for o in row.options) else " (not the recommended)"
-        lines.append(f"{row.n}. {row.choice}{off}" + (f" — {row.note}" if row.note else ""))
+        chosen = next((option for option in row.options if option.value == row.choice), None)
+        off = (
+            ""
+            if chosen is None or chosen.recommended or not any(o.recommended for o in row.options)
+            else " (not the recommended)"
+        )
+        lines.append(f"{row.n}. {row.choice}{off}" + (f" — {' '.join(row.note.split())}" if row.note else ""))
     return "\n".join(lines)

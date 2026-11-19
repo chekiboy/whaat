@@ -1,6 +1,7 @@
 """A decisions page: questions an agent session puts to the user, each with its options and a recommended one. The
 user answers on the page; the waiting session reads the answer. The agent writes the questions only: the choice,
-the note and the stamps are written by whaat."""
+the note and the sent stamp are written by whaat. Every row also offers DISCUSS, which whaat adds: the user wants to
+talk the question over before anything is decided."""
 
 from typing import Annotated, Literal
 
@@ -11,6 +12,7 @@ from whaat.reports.types.journal import BODY_VERSION
 
 Text = Annotated[str, StringConstraints(min_length=1)]
 OptionValue = Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9-]{0,39}$")]
+DISCUSS = "discuss"
 
 
 class DecisionsOption(Strict):
@@ -32,13 +34,17 @@ class DecisionRowIn(Strict):
         values = [option.value for option in options]
         if len(values) != len(set(values)):
             raise ValueError("option values must be unique within a row")
+        if DISCUSS in values:
+            raise ValueError(f"{DISCUSS!r} is added to every row by whaat; do not offer it as an option")
         if sum(option.recommended for option in options) > 1:
             raise ValueError("at most one option of a row is recommended")
         return options
 
 
 class DecisionRow(DecisionRowIn):
-    choice: str | None = Field(default=None, description="Set by whaat: the chosen option's value.")
+    choice: str | None = Field(
+        default=None, description=f"Set by whaat: the chosen option's value, or {DISCUSS!r} to talk it over first."
+    )
     note: str | None = Field(default=None, description="Set by whaat: the user's note on the row.")
 
 

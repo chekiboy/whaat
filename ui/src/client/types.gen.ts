@@ -500,7 +500,7 @@ export type DecisionRow = {
     /**
      * Choice
      *
-     * Set by whaat: the chosen option's value.
+     * Set by whaat: the chosen option's value, or 'discuss' to talk it over first.
      */
     choice?: string | null;
     /**

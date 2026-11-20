@@ -7,7 +7,7 @@ the store file it names history. A broken link whose name matches exactly one me
 prefix are set aside (an older name form) gets that memory's name as a suggestion.
 Stale candidates are checked against each repo's last-fetched origin default ref, never a working tree;
 nothing is fetched. Repo roots come from MEMORY_REPO_ROOTS (colon-separated); without it, no path is checked.
-Validity: a score starts at the `source` weight and loses 0.2 per 120 days since the latest of `confirmed`, the last
+Validity: a score starts at the `source` weight and loses 0.2 per 30 days since the latest of `confirmed`, the last
 `held` outcome (the identity's memory-outcomes.log) and the file's first commit. A superseded file without an index
 line is history: it stays out of the duplicate, stale and validity checks.
 Size and index-drift are reported only for a memory unchanged for FRESH_DAYS (one still being shaped is left alone),
@@ -24,6 +24,7 @@ from pathlib import Path
 from whaat.memory.migration import ALL_TYPES
 from whaat.memory.recall import Roots
 from whaat.memory.validity import (
+    DECAY_DAYS,
     DECAY_PER_DAY,
     LEVELS,
     PERSONAL_DIR,
@@ -380,7 +381,8 @@ def lint(
     tally += [f"history {len(history)}"] + ([f"undated {undated}"] if undated else [])
     out.append(f"\n## Validity ({', '.join(tally)})\n")
     out.append(
-        f"The source weight minus {DECAY_PER_DAY * 120:.1f} per 120 days since the latest of `confirmed`, the last"
+        f"The source weight minus {DECAY_PER_DAY * DECAY_DAYS:.1f} per {DECAY_DAYS} days"
+        " since the latest of `confirmed`, the last"
     )
     out.append("`held` outcome and the first commit. Stale files are `verify` candidates;")
     out.append("history files are superseded and never acted on.\n")

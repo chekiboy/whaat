@@ -1,6 +1,6 @@
 """memory-validity and memory-outcome on one identity's memory: scores, read and outcome logs, the Read hook's note.
 
-A score starts at the `source` weight and loses 0.2 per 120 days since the latest of `confirmed`, the last `held`
+A score starts at the `source` weight and loses 0.2 per 30 days since the latest of `confirmed`, the last `held`
 outcome and the file's first commit. A superseded file without an index line is history and is not scored. The logs
 (memory-reads.log, memory-outcomes.log: one tab-separated line per event) and memory-validity.json sit in the
 identity's state dir. The personal dir is left out everywhere: it is not scored,
@@ -17,7 +17,8 @@ import tempfile
 from whaat.memory.recall import DIR_MODE, LOG_NAME, PERSONAL, Roots
 
 SOURCE_BASE: dict[str | None, float] = {"measured": 1.0, "user-decision": 1.0, "inference": 0.75, None: 0.9}
-DECAY_PER_DAY = 0.2 / 120
+DECAY_DAYS = 30
+DECAY_PER_DAY = 0.2 / DECAY_DAYS
 LEVELS = ((0.8, "certain"), (0.6, "likely"), (0.4, "uncertain"), (0.0, "stale"))
 UNQUOTED_FIELDS = ("source", "confirmed", "supersedes")
 SCORES_FILE = "memory-validity.json"
@@ -244,7 +245,7 @@ def refresh(roots: Roots) -> dict[str, object]:
         "store": store,
         "rule": "source weight ("
         + ", ".join(f"{k or 'unset'} {v}" for k, v in SOURCE_BASE.items())
-        + ") minus 0.2 per 120 days since the latest anchor",
+        + f") minus 0.2 per {DECAY_DAYS} days since the latest anchor",
         "levels": {name: floor for floor, name in LEVELS},
         "memories": score_store(store, state, today),
     }

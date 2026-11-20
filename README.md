@@ -17,7 +17,7 @@ The agent decides what to remember and writes it; Whaat saves it, puts the right
 | | |
 |---|---|
 | Category | AI Identity Runtime: persistent AI memory and identity continuity for AI agents |
-| Version | 0.3.1, early software: the API, the CLI and the file formats may change before 1.0 |
+| Version | 0.4.0, early software: the API, the CLI and the file formats may change before 1.0 |
 | Platform | macOS; other systems are not supported yet |
 | Integrations | Claude Code (plugin with skills and hooks); any MCP client that runs servers over stdio |
 | Storage | Local and file-based: markdown memories and JSON reports, one Git repository per identity |
@@ -138,7 +138,7 @@ The pictures show generated sample data.
 
 ## Status: what works, what is experimental
 
-Version 0.3.1: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
+Version 0.4.0: early software. Until 1.0, the API, the CLI and the file formats may change from one version to the next. The app shows the running version in its status bar. What changed in each version is in [`CHANGELOG.md`](CHANGELOG.md).
 
 - **Works today:** layered memory with recall and scoring, saving through the agent, curation, migration, the journal and session reports, several identities, the Claude Code plugin, the MCP layer and the app.
 - **Experimental:** the terminal, which runs agent sessions inside the app.
@@ -308,7 +308,7 @@ Yes. The migration reads a memory store, a personal memory folder, Claude Code's
 macOS. Other systems are not supported yet.
 
 ### What license does Whaat use?
-Version 0.2.0 and later, including 0.3.1, are licensed under the Business Source License 1.1, which makes the code source-available, not open source. Release 0.1.0 remains under the Apache License 2.0. See [License](#license).
+Version 0.2.0 and later, including 0.4.0, are licensed under the Business Source License 1.1, which makes the code source-available, not open source. Release 0.1.0 remains under the Apache License 2.0. See [License](#license).
 
 ## Author
 

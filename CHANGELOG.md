@@ -2,11 +2,26 @@
 
 What changed in each version of whaat. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0, a new minor version (0.2, 0.3) may change the API, the CLI or the file formats.
 
-## Unreleased
+## 0.4.0 (2026-11-20)
+
+### Added
+
+- **Decisions pages.** A session that stops for your decisions puts its questions on a page in the app: each question with what it takes to decide it, its options and the one recommended. You pick an option or put the question to discussion, add a note, and send the answer once. The session waits in the background, reads your answer and goes on from it. The new `decisions` skill drives this through `whaat decisions save` and `whaat decisions wait`. The pages stay in the identity's private folder and are never shared. They are not offered over MCP, because their answer reaches a session through the waiting command.
+- **Sessions page.** The Reports module lists every session that left a document, one line each, with its reports, journal and decisions pages, and marks the decisions pages that still wait for you. A line opens the session's report, else the decisions page that waits, else its newest document.
+- **Your answers in the session report.** A session report links the session's decisions pages, and the journal skill records each answered question as one of your decisions, with your note as the reason.
+- **API.** `POST /api/v1/journal/decisions` saves a decisions page, `POST /api/v1/journal/decisions/collect` returns its answer once you sent it, and `POST /api/v1/reports/{id}/answer` records your answer. A report's state can be `waiting`.
+- **Documentation.** The README's measurements show how the agent treats a likely and an uncertain memory that the code contradicts.
 
 ### Changed
 
 - **Validity fades four times faster.** A memory's score now loses 0.2 per 30 days instead of per 120 days since its latest anchor (`confirmed`, the last `held` outcome, the first commit). A memory nobody confirms or uses successfully reaches `stale` within two to three months instead of about a year; a confirmation or a successful use restarts the clock as before.
+- **One memory per open call.** Memories opened in one call share one note of about 9,500 characters, so the recall skill opens each in its own call, and a note names a memory it left out at its top. A memory's trust fits on its first line, and its linked memories show their trust only when it is weak.
+- Bumped the project version to 0.4.0.
+
+### Fixed
+
+- **recall-guard** declines a shell read of a memory file also when the path is built with shell variables, `cd`, globs or nested commands.
+- **Saving or deleting `personal:x.md`**, the path recall names a personal memory by, now works in the personal folder.
 
 ## 0.3.1 (2026-11-17)
 

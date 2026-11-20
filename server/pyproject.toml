@@ -1,6 +1,6 @@
 [project]
 name = "whaat"
-version = "0.3.1"
+version = "0.4.0"
 description = "Whaat?! Not just an agent. An agent with a past."
 readme = "README.md"
 license = "BUSL-1.1"

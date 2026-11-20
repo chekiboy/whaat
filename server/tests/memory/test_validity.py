@@ -62,7 +62,7 @@ def post(client: TestClient, auth: dict[str, str], endpoint: str, **body: Any) -
 
 
 def expected(base: float, day: datetime.date) -> float:
-    return round(max(0.0, base - 0.2 / 120 * (TODAY - day).days), 3)
+    return round(max(0.0, base - 0.2 / 30 * (TODAY - day).days), 3)
 
 
 def test_refresh_scores_from_source_and_latest_anchor_and_leaves_personal_out(

@@ -46,7 +46,7 @@ A recalled memory arrives with one line that tells the agent how much to rely on
 - its source: `measured`, `user-decision`, or `inference` (the agent's own conclusion);
 - how many times it **held** (it was used and proved right), **misled** (it was wrong or out of date) or was **irrelevant** (it opened for a task it did not fit).
 
-**Validity** is a score that fades with age. It starts from the source (1.0 for measured or user-decided, 0.75 for an inference, 0.9 when none is given) and loses 0.2 every 120 days. The clock restarts whenever the memory is confirmed or holds in use. The score gives a level:
+**Validity** is a score that fades with age. It starts from the source (1.0 for measured or user-decided, 0.75 for an inference, 0.9 when none is given) and loses 0.2 every 30 days. The clock restarts whenever the memory is confirmed or holds in use. The score gives a level:
 
 | Level | Score | What the agent does |
 |---|---|---|

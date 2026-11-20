@@ -2,6 +2,12 @@
 
 What changed in each version of whaat. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Until 1.0, a new minor version (0.2, 0.3) may change the API, the CLI or the file formats.
 
+## Unreleased
+
+### Changed
+
+- **Validity fades four times faster.** A memory's score now loses 0.2 per 30 days instead of per 120 days since its latest anchor (`confirmed`, the last `held` outcome, the first commit). A memory nobody confirms or uses successfully reaches `stale` within two to three months instead of about a year; a confirmation or a successful use restarts the clock as before.
+
 ## 0.3.1 (2026-11-17)
 
 ### Added

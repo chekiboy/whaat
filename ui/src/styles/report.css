@@ -1133,3 +1133,20 @@
   opacity: 1;
   text-decoration: none;
 }
+
+.rp .options .dc-option {
+  display: inline-flex;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.rp .options .dc-option:not(:disabled):hover {
+  text-decoration: underline;
+}
+.rp .dc-note {
+  width: 100%;
+}

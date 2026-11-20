@@ -520,6 +520,33 @@ export const hu = {
       ended: "A session véget ért",
     },
   },
+  decisions: {
+    title: "Döntések",
+    stateLabel: "Állapot",
+    pagesTitle: "Döntési oldalak",
+    thisSession: "Ez a session",
+    noSessions: "Nincs ilyen session.",
+    sessionState: { waiting: "vár", finished: "befejezett", noReport: "nincs riport" },
+    waiting: "Vár",
+    sent: "Elküldve",
+    waitingLine: "A session a válaszodra vár.",
+    sentLine: "Elküldve: {{at}}.",
+    summary: "Összefoglaló",
+    allRecommended: "Mind az ajánlott",
+    recommended: "ajánlott",
+    asRecommended: "Ajánlott szerint",
+    offRecommended: "Eltér az ajánlottól",
+    options: "Opciók",
+    noDecision: "nincs döntés",
+    optional: "opcionális",
+    discuss: "Beszéljük meg",
+    noteWithoutChoice:
+      "{{rows}}: a megjegyzés egy opcióhoz tartozik. Válassz egyet (a megjegyzés felülírja), válaszd a Beszéljük meg-et, vagy töröld a megjegyzést.",
+    sendFailedUnknown: "a szerver nem mondta meg, miért",
+    noReportHint:
+      "Nincs riport: a session riport nélkül ért véget, vagy még fut. Abban a sessionben a /whaat:journal write-session-report megírja; egy véget ért session riportját egy másik session is megírhatja a transcriptjéből.",
+    sendFailed: "Nem sikerült elküldeni: {{error}}",
+  },
   reports: {
     title: "Riportok",
     loading: "A riportok töltődnek…",
@@ -555,6 +582,11 @@ export const hu = {
       "session-report": {
         label: "Session-riport",
         description: "Mit csinált, mit döntött és mit tanult egy munkasession.",
+      },
+      decisions: {
+        label: "Döntések",
+        description:
+          "Kérdések, amelyeket egy session tett fel a felhasználónak, opciókkal és egy ajánlottal; az oldalon dől el.",
       },
       journal: {
         label: "Napló",

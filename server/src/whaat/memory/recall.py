@@ -271,6 +271,7 @@ def parts_seen(events: list[dict[str, object]], session: str, agent: str, digest
 
 
 LINK = re.compile(r"\[\[([\w.-]+)\]\]")
+FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 
 
 def memory_names(roots: Roots) -> dict[str, str]:
@@ -286,16 +287,16 @@ def memory_names(roots: Roots) -> dict[str, str]:
     return names
 
 
-def trust_and_links(
-    roots: Roots, names: Callable[[], dict[str, str]], rel: str, text: str, head: str, describe: Callable[[str], str]
+def related(
+    roots: Roots, names: Callable[[], dict[str, str]], rel: str, text: str, describe: Callable[[str], str]
 ) -> list[str]:
-    """This memory's own trust, then the memories it links to, each by its index line and how far it can be trusted,
-    not by its text, so they can be weighed side by side."""
+    """The memories this one links to, each by its index line, not by its text; how far one can be trusted only where
+    it is weak (a `⚠` line), since a sound one says nothing a reader must weigh."""
     own = os.path.basename(rel)[:-3]
     wanted = [name for name in dict.fromkeys(LINK.findall(text)) if name != own]
     if not wanted:
         return []
-    lines = []
+    lines = ["Related:"]
     for name in wanted:
         found = names().get(name)
         if found is None:
@@ -304,14 +305,23 @@ def trust_and_links(
         root, inner, _ = roots.root_of(found)
         line = index_line(root, inner)
         trigger = line.split("—", 1)[-1].strip() if line and "—" in line else "(no index line)"
-        trust = " · ".join(part for part in describe(found).splitlines() if part)
-        lines.append(f"- {found} — {trigger}\n  {trust}" if trust else f"- {found} — {trigger}")
-    own_trust = " · ".join(part for part in head.splitlines() if part)
-    intro = (
-        "Related, by its links (index lines and trust only, not their text; open one with `whaat memory open` when"
-        " its trigger fits the task):"
-    )
-    return ([f"This memory: {own_trust}"] if own_trust else []) + [intro, *lines]
+        trust = describe(found).splitlines()
+        weak = [part for part in trust if part.startswith("⚠")]
+        lines.append(f"- {found} — {trigger}" + (f"\n  {trust[0]} {' '.join(weak)}" if weak else ""))
+    return lines
+
+
+def without_frontmatter(text: str) -> tuple[str, str]:
+    """The memory's type and what it supersedes, as a header part, and its text without the frontmatter, whose name,
+    trigger and dates repeat the file name, the index line and the trust line."""
+    match = FRONTMATTER.match(text)
+    if not match:
+        return "", text
+    fields = dict(re.findall(r"^\s*(type|supersedes):\s*(\S.*?)\s*$", match.group(1), re.M))
+    head = f" ({fields['type']})" if "type" in fields else ""
+    if "supersedes" in fields:
+        head += f" · supersedes {fields['supersedes']}"
+    return head, text[match.end() :].lstrip("\n")
 
 
 def parts_given(
@@ -461,7 +471,7 @@ def frame(
             known_names.update(memory_names(roots))
         return known_names
 
-    for rel, path in hits:
+    for n, (rel, path) in enumerate(hits):
         at = None if force else already_in(roots, session, agent, rel)
         if at:
             blocks.append(
@@ -474,14 +484,17 @@ def frame(
         except OSError:
             left_out.append(rel)
             continue
-        head = describe(rel)
-        block = f"Memory: {rel}\n{head + chr(10) if head else ''}\n{text}\n"
-        room = FRAME_CAP - sum(map(len, blocks)) - len(block)
+        kind, body = without_frontmatter(text)
+        trust = describe(rel).splitlines()
+        header = f"Memory: {rel}{kind}" + (f" · {trust[0]}" if trust else "")
+        block = "\n".join([header, *trust[1:], "", body]) + "\n"
+        # Room is kept for the not-put-in line naming every memory still to come, which goes first.
+        reserve = len(not_put_in([*left_out, *(later for later, _ in hits[n:])]))
+        room = FRAME_CAP - sum(map(len, blocks)) - len(block) - reserve
         if not uncapped and room < 0:
             left_out.append(rel)
             continue
-        links = trust_and_links(roots, names, rel, text, head, describe)
-        block += with_room(links, None if uncapped else room)
+        block += with_room(related(roots, names, rel, text, describe), None if uncapped else room)
         blocks.append(block)
         put_in.append(rel)
     if put_in:
@@ -492,11 +505,17 @@ def frame(
                 line = {"at": at, "session": session, "agent": agent, "op": "inject", "file": rel}
                 handle.write(json.dumps(line, ensure_ascii=False) + "\n")
     if left_out:
-        blocks.append(
-            "[memory] not put in (over the hook's size limit or unreadable); open each again with force=1, "
-            "one per call: " + ", ".join(left_out)
-        )
+        blocks.insert(0, not_put_in(left_out))
     return "\n".join(blocks)
+
+
+def not_put_in(rels: list[str]) -> str:
+    """The line that names the memories a note left out; it opens the note, so it is read before the memories."""
+    return (
+        f"[memory] not put in: {', '.join(rels)}. One call's note holds about {FRAME_CAP:,} characters, and these did "
+        "not fit (or could not be read): their text has not reached you. Open each again with force=1, in its own "
+        "call.\n"
+    )
 
 
 def guard(roots: Roots, session: str, paths: list[str], must_exist: bool) -> str | None:

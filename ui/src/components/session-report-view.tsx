@@ -1,9 +1,11 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { Decision, Drift, OpenQuestion, SessionReportBody } from "@/client";
 import { getReportOptions, listReportsOptions } from "@/client/@tanstack/react-query.gen";
 import { JournalBlocks } from "@/components/journal-view";
 import { Lines, Panel, Text } from "@/components/report-frame";
+import { useTranslation } from "@/i18n";
 
 type Kind = "du" | "dc" | "df" | "q";
 type Filter = Kind | "all";
@@ -88,6 +90,29 @@ function SessionJournal({ session, open }: { session: string; open: boolean }) {
   ) : (
     <Panel id="journal-reflection" title="Reflection" collapsible open={open}>
       <p className="muted">No journal entry yet.</p>
+    </Panel>
+  );
+}
+
+/** The session's decisions pages, each linked, with whether it still waits for the user. */
+export function SessionDecisionPages({ session }: { session: string }) {
+  const { t } = useTranslation();
+  const { data: pages } = useQuery(listReportsOptions({ query: { session, kind: "decisions" } }));
+  if (!pages?.length) return null;
+  return (
+    <Panel id="decision-pages" title={t("decisions.pagesTitle")}>
+      <ul>
+        {pages.map((page) => (
+          <li key={page.id}>
+            <Link to="/reports/$key" params={{ key: page.key }}>
+              {page.envelope.title}
+            </Link>{" "}
+            <span className="muted">
+              · {page.state === "waiting" ? t("decisions.sessionState.waiting") : t("curation.bar.sent")}
+            </span>
+          </li>
+        ))}
+      </ul>
     </Panel>
   );
 }
@@ -225,6 +250,7 @@ export function SessionReportView({
           />
         </Panel>
       )}
+      {(all || filter === "du") && session && <SessionDecisionPages session={session} />}
       {all && session && <SessionJournal key={`journal-${v}`} session={session} open={expanded.open} />}
     </>
   );

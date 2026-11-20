@@ -1,6 +1,6 @@
 # MCP layer
 
-Use the MCP layer when your agent is not Claude Code, or when you want Whaat as tools rather than skills. It lets that agent work as a Whaat identity. `whaat mcp` is an MCP server that offers the same memory, journal and report calls the Claude Code skills make, so any client that runs MCP servers over stdio gets the same memory.
+Use the MCP layer when your agent is not Claude Code, or when you want Whaat as tools rather than skills. It lets that agent work as a Whaat identity. `whaat mcp` is an MCP server that offers the same memory, journal and report calls the Claude Code skills make (decisions pages excepted: their answer reaches a session through a waiting command, not a tool call), so any client that runs MCP servers over stdio gets the same memory.
 
 
 ## How it works

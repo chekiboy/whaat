@@ -237,8 +237,7 @@ def test_frame_puts_a_memory_in_once_per_agent_unless_forced(
     subagent = frame(client, trial, memory, "feedback_g.md", agent="a1").json()["context"]
 
     assert first == (
-        "Memory: feedback_g.md\nTruthness: source unset; since its last change held 0, misled 0, irrelevant 0\n"
-        "Validity: undated (no confirmed date, held outcome or commit)\n\nG.\n"
+        "Memory: feedback_g.md · Truthness: unset; held 0, misled 0, irrelevant 0 · Validity: undated\n\nG.\n"
     )
     assert again.startswith("[memory] feedback_g.md is already in your context (put in at ")
     assert forced == subagent == first
@@ -263,8 +262,7 @@ def test_the_core_load_counts_for_the_main_agent_until_a_compaction(
 
     assert "already in your context (put in at 09:00)" in loaded
     assert after_compaction == (
-        "Memory: personal:core/claude_self.md\nTruthness: source unset\n"
-        "Validity: not scored (personal memory)\n\nSelf.\n"
+        "Memory: personal:core/claude_self.md · Truthness: unset · Validity: not scored (personal)\n\nSelf.\n"
     )
 
 
@@ -298,19 +296,19 @@ def test_guard_names_the_first_memory_not_opened_this_session(
     assert guard(client, trial, memory / "acme/shop/feedback_r.md") == "acme/shop/feedback_r.md"
 
 
-def test_an_opened_memory_lists_the_memories_it_links_to_by_index_line_and_trust_only(
+def test_an_opened_memory_lists_the_memories_it_links_to_by_index_line_and_only_a_weak_ones_trust(
     client: TestClient, trial: dict[str, str], memory: Path
 ) -> None:
     write(memory / "feedback_g.md", "G.\nRelated: [[feedback_r]], [[user_x]], [[feedback_gone]], [[feedback_g]].\n")
 
     context = frame(client, trial, memory, "feedback_g.md").json()["context"]
-    assert "Related, by its links" in context
-    before, links = context.split("Related, by its links", 1)
+    assert "\nRelated:\n" in context
+    links = context.split("\nRelated:\n", 1)[1]
 
-    assert before.splitlines()[-1].startswith("This memory: Truthness:")
-
-    assert "- acme/shop/feedback_r.md — When r\n  Truthness:" in links
-    assert "- personal:user_x.md — When x\n  Truthness: source unset · Validity: not scored (personal memory)" in links
+    assert "This memory" not in context
+    assert "- acme/shop/feedback_r.md — When r\n" in links
+    assert "- personal:user_x.md — When x\n" in links
+    assert "Truthness" not in links
     assert "- [[feedback_gone]]: no memory of that name" in links
     assert "feedback_g.md —" not in links
     assert "R." not in links and "X." not in links
@@ -322,7 +320,7 @@ def test_a_long_memory_with_many_links_is_put_in_and_its_links_give_way(
     for n in range(8):
         write(memory / f"feedback_l{n}.md", f"L{n}.\n")
     links = ", ".join(f"[[feedback_l{n}]]" for n in range(8))
-    write(memory / "feedback_g.md", "G" * 8_700 + f"\nRelated: {links}.\n")
+    write(memory / "feedback_g.md", "G" * 8_950 + f"\nRelated: {links}.\n")
 
     context = frame(client, trial, memory, "feedback_g.md").json()["context"]
 
@@ -330,6 +328,58 @@ def test_a_long_memory_with_many_links_is_put_in_and_its_links_give_way(
     assert "not put in" not in context
     assert "related line(s) left out: over the size limit" in context
     assert len(context) <= 9_500 + 100
+
+
+def test_memories_left_out_of_one_call_are_named_first_and_the_note_stays_under_the_hook_cap(
+    client: TestClient, trial: dict[str, str], memory: Path
+) -> None:
+    names = [f"feedback_big{n}" for n in range(6)]
+    for name in names:
+        write(memory / f"{name}.md", "B" * 3_000 + "\n")
+    opened = [{"file": f"{name}.md", "path": str((memory / f"{name}.md").resolve())} for name in names]
+
+    context = client.post(
+        "/api/v1/memory/recall/frame", json={"session": "abcd1234", "opened": opened}, headers=trial
+    ).json()["context"]
+
+    first = context.splitlines()[0]
+    put_in = [name for name in names if f"Memory: {name}.md" in context]
+    assert first.startswith("[memory] not put in: ")
+    assert put_in and len(put_in) < len(names)
+    assert all((f"{name}.md" in first) != (name in put_in) for name in names)
+    assert len(context) <= 10_000
+
+
+def test_a_note_carries_the_type_and_what_a_memory_supersedes_instead_of_its_frontmatter(
+    client: TestClient, trial: dict[str, str], memory: Path
+) -> None:
+    write(
+        memory / "feedback_g.md",
+        "---\nname: feedback_g\ndescription: When g\ntype: feedback\nsupersedes: feedback_old\n---\nG.\n",
+    )
+
+    context = frame(client, trial, memory, "feedback_g.md").json()["context"]
+
+    assert context.startswith("Memory: feedback_g.md (feedback) · supersedes feedback_old · Truthness: ")
+    assert "name: feedback_g" not in context and "description:" not in context
+    assert "\n\nG.\n" in context
+
+
+def test_a_linked_memory_shows_its_trust_only_where_it_is_weak(
+    client: TestClient, trial: dict[str, str], memory: Path
+) -> None:
+    write(memory / "MEMORY.md", "- feedback_g.md — When g\n- feedback_guess.md — When guessed\n")
+    write(memory / "feedback_guess.md", "---\nname: feedback_guess\nsource: inference\n---\nGuess.\n")
+    write(memory / "feedback_g.md", "G.\nRelated: [[feedback_guess]], [[feedback_r]].\n")
+
+    context = frame(client, trial, memory, "feedback_g.md").json()["context"]
+
+    assert "\nRelated:\n" in context
+    links = context.split("\nRelated:\n", 1)[1]
+    assert "- feedback_guess.md — When guessed\n  Truthness: inference;" in links
+    assert "⚠ Weak truthness: it was inferred" in links
+    assert "- acme/shop/feedback_r.md — When r\n" in links
+    assert links.count("Truthness") == 1
 
 
 def test_an_index_answer_is_corrected_for_an_agent_that_did_not_read_the_parts_itself(

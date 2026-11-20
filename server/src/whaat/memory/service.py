@@ -217,6 +217,9 @@ class MemoryService:
 
     @staticmethod
     def _inside(root: Path, rel_path: str) -> Path:
+        """A memory's path below the root; `personal:x.md`, as recall names a personal memory, is `personal/x.md`."""
+        if rel_path.startswith(recall.PERSONAL):
+            rel_path = f"{PERSONAL_DIR}/{rel_path[len(recall.PERSONAL) :]}"
         path = (root / rel_path).resolve()  # an absolute path inside the root is taken as it is
         if not path.is_relative_to(root.resolve()) or path.suffix != ".md" or path.name == INDEX_NAME:
             raise InvalidMemoryPathError(rel_path)

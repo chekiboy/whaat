@@ -24,6 +24,22 @@ class UndecidedRowsError(ValueError):
         self.numbers = numbers
 
 
+class DecisionsNotFoundError(LookupError):
+    def __init__(self, report_id: str) -> None:
+        super().__init__(f"no decisions page {report_id!r} in an identity's private folder")
+        self.report_id = report_id
+
+
+class DecisionsAlreadySentError(Exception):
+    def __init__(self, report_id: str, at: str) -> None:
+        super().__init__(f"{report_id} was answered at {at}; an answer is sent once")
+        self.report_id = report_id
+
+
+class InvalidAnswerError(ValueError):
+    pass
+
+
 class InvalidStoredDocumentError(Exception):
     def __init__(self, report_id: str, reason: str) -> None:
         super().__init__(f"{report_id} is not a valid document ({reason}), so it is left as it is")

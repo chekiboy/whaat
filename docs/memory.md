@@ -40,13 +40,13 @@ A third call, **dump**, reads a whole folder at once. It is meant for tidying or
 
 ## Trust: how far a memory can be relied on
 
-A recalled memory arrives with two lines that tell the agent how much to rely on it.
+A recalled memory arrives with one line that tells the agent how much to rely on it, followed by a `⚠` line when part of it is weak. Below the memory, its linked memories are listed by their triggers, so the agent can open the ones that fit; a linked memory's trust is shown only when it is weak. The memories the agent opens in one call share one note of about 9,500 characters, so it opens each in its own call; one that does not fit is named at the top of the note.
 
 **Truthness** says what backs the memory, and how it went since its last change:
 - its source: `measured`, `user-decision`, or `inference` (the agent's own conclusion);
 - how many times it **held** (it was used and proved right), **misled** (it was wrong or out of date) or was **irrelevant** (it opened for a task it did not fit).
 
-**Validity** is a score that fades with age. It starts from the source (1.0 for measured or user-decided, 0.75 for an inference, 0.9 when none is given) and loses 0.2 every 120 days. The clock restarts whenever the memory is confirmed or holds in use. The score gives a level:
+**Validity** is a score that fades with age. It starts from the source (1.0 for measured or user-decided, 0.75 for an inference, 0.9 when none is given) and loses 0.2 every 30 days. The clock restarts whenever the memory is confirmed or holds in use. The score gives a level:
 
 | Level | Score | What the agent does |
 |---|---|---|

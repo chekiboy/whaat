@@ -279,7 +279,7 @@ def test_an_outcome_counts_when_it_came_after_the_last_change_even_on_the_same_d
         ("memory_open", opening),
     )
 
-    assert "since its last change held 1, misled 0, irrelevant 0" in opened.content[0].text
+    assert "Truthness: unset; held 1, misled 0, irrelevant 0" in opened.content[0].text
 
 
 def test_a_curation_brief_over_mcp_tells_its_agent_to_read_the_dir_with_the_mcp_tool(

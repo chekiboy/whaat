@@ -1,3 +1,4 @@
+import datetime
 import json
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def trial(client: TestClient, settings: Settings, isolated_git: None) -> dict[st
     write(
         memory / "acme/shop/feedback_b.md",
         "---\nname: feedback-b\ndescription: When b\ntype: feedback\n"
-        "supersedes: feedback_old\nconfirmed: 2026-10-01\n---\nB.\n",
+        f"supersedes: feedback_old\nconfirmed: {datetime.date.today().isoformat()}\n---\nB.\n",
     )
     write(memory / "acme/shop/feedback_old.md", "---\nname: feedback-old\ndescription: When old\n---\nOld.\n")
     write(memory / "personal/user_x.md", "---\nname: user-x\ntype: user\n---\nX, see [[feedback-a]].\n")

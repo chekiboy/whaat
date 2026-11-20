@@ -4,11 +4,13 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 from whaat.reports.types.base import AtomDatetime
+from whaat.reports.types.decisions import DecisionsContent
 from whaat.reports.types.journal import JournalContent
 from whaat.reports.types.memory_curation import CurationReportContent
 from whaat.reports.types.session_report import SessionReportContent
 
-ReportState = Literal["done", "applied"]
+# waiting: a decisions page the user has not answered yet
+ReportState = Literal["done", "applied", "waiting"]
 EnvelopeSource = Literal["meta", "embedded", "derived"]
 
 
@@ -52,7 +54,8 @@ class ReportBody(BaseModel):
 
 
 ReportContent = Annotated[
-    ReportBody | JournalContent | SessionReportContent | CurationReportContent, Field(discriminator="format")
+    ReportBody | JournalContent | SessionReportContent | CurationReportContent | DecisionsContent,
+    Field(discriminator="format"),
 ]
 
 

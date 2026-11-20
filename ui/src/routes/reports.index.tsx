@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { listIdentitiesOptions, listReportsOptions } from "@/client/@tanstack/react-query.gen";
 import { tileClassName } from "@/components/nav-tile";
 import { ReportCard } from "@/components/report-card";
+import { ReportsModuleBar } from "@/components/reports-module-bar";
 import { useTranslation } from "@/i18n";
 import { sectionTitle, usePageHeading } from "@/lib/breadcrumb";
 import { KIND_ORDER, useKindInfo } from "@/lib/report-kinds";
@@ -43,6 +44,7 @@ function ReportList() {
 
   return (
     <section>
+      <ReportsModuleBar />
       {identities.data && identities.data.length > 1 && (
         <nav className="mb-3 flex flex-wrap gap-2" aria-label={t("reports.byIdentity")}>
           <KindTile

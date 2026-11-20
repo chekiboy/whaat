@@ -6,7 +6,7 @@ from typing import Protocol
 
 from whaat.config import Settings
 
-PRIVATE_REPORT_DIRS = ("session-reports", "journal", "memory-curation")
+PRIVATE_REPORT_DIRS = ("session-reports", "journal", "memory-curation", "decisions")
 PRIVATE_ROOT_PREFIX = "private-"
 REPORT_SUFFIXES = (".md", ".json")
 COMPANION_NAMES = (".meta.json", ".notes.json")

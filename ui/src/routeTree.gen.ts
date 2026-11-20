@@ -16,6 +16,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TerminalRouteImport } from './routes/terminal'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as ReportsKeyRouteImport } from './routes/reports.$key'
+import { Route as ReportsSessionsRouteImport } from './routes/reports.sessions'
 import { Route as SettingsIdentitiesIdentityMigrateRouteImport } from './routes/settings_.identities.$identity.migrate'
 
 const IndexRoute = IndexRouteImport.update({
@@ -53,6 +54,11 @@ const ReportsKeyRoute = ReportsKeyRouteImport.update({
   path: '/reports/$key',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsSessionsRoute = ReportsSessionsRouteImport.update({
+  id: '/reports/sessions',
+  path: '/reports/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsIdentitiesIdentityMigrateRoute =
   SettingsIdentitiesIdentityMigrateRouteImport.update({
     id: '/settings_/identities/$identity/migrate',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
   '/reports/$key': typeof ReportsKeyRoute
+  '/reports/sessions': typeof ReportsSessionsRoute
   '/reports/': typeof ReportsIndexRoute
   '/settings/identities/$identity/migrate': typeof SettingsIdentitiesIdentityMigrateRoute
 }
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
   '/reports/$key': typeof ReportsKeyRoute
+  '/reports/sessions': typeof ReportsSessionsRoute
   '/reports': typeof ReportsIndexRoute
   '/settings/identities/$identity/migrate': typeof SettingsIdentitiesIdentityMigrateRoute
 }
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/terminal': typeof TerminalRoute
   '/reports/$key': typeof ReportsKeyRoute
+  '/reports/sessions': typeof ReportsSessionsRoute
   '/reports/': typeof ReportsIndexRoute
   '/settings_/identities/$identity/migrate': typeof SettingsIdentitiesIdentityMigrateRoute
 }
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/terminal'
     | '/reports/$key'
+    | '/reports/sessions'
     | '/reports/'
     | '/settings/identities/$identity/migrate'
   fileRoutesByTo: FileRoutesByTo
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/terminal'
     | '/reports/$key'
+    | '/reports/sessions'
     | '/reports'
     | '/settings/identities/$identity/migrate'
   id:
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/terminal'
     | '/reports/$key'
+    | '/reports/sessions'
     | '/reports/'
     | '/settings_/identities/$identity/migrate'
   fileRoutesById: FileRoutesById
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TerminalRoute: typeof TerminalRoute
   ReportsKeyRoute: typeof ReportsKeyRoute
+  ReportsSessionsRoute: typeof ReportsSessionsRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
   SettingsIdentitiesIdentityMigrateRoute: typeof SettingsIdentitiesIdentityMigrateRoute
 }
@@ -186,6 +199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports/sessions': {
+      id: '/reports/sessions'
+      path: '/reports/sessions'
+      fullPath: '/reports/sessions'
+      preLoaderRoute: typeof ReportsSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/identities/$identity/migrate': {
       id: '/settings_/identities/$identity/migrate'
       path: '/settings/identities/$identity/migrate'
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TerminalRoute: TerminalRoute,
   ReportsKeyRoute: ReportsKeyRoute,
+  ReportsSessionsRoute: ReportsSessionsRoute,
   ReportsIndexRoute: ReportsIndexRoute,
   SettingsIdentitiesIdentityMigrateRoute:
     SettingsIdentitiesIdentityMigrateRoute,

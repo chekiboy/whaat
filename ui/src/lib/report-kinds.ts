@@ -13,8 +13,17 @@ const KINDS: Record<string, string> = {
   "memory-curation": "bg-stripe-teal",
   "session-report": "bg-stripe-blue",
   journal: "bg-stripe-violet",
+  decisions: "bg-stripe-orange",
 };
-const KNOWN = ["review", "development", "investigation", "memory-curation", "session-report", "journal"] as const;
+const KNOWN = [
+  "review",
+  "development",
+  "investigation",
+  "memory-curation",
+  "session-report",
+  "journal",
+  "decisions",
+] as const;
 
 /** A report kind's colour, and its name and description in the chosen language; a kind we do not know shows as it is. */
 export function useKindInfo(): (kind: string) => KindInfo {
